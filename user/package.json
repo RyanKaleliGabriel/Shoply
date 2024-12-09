@@ -1,10 +1,12 @@
 {
-  "name": "shoply",
+  "name": "user",
   "version": "1.0.0",
-  "description": "Scalable E-Commerce Platform",
+  "description": "User service.",
   "main": "index.js",
   "scripts": {
-    "test": "npm test"
+    "build": "npx tsc",
+    "test": "npm test",
+    "dev": "nodemon dist/server.js"
   },
   "repository": {
     "type": "git",
@@ -16,13 +18,14 @@
     "url": "https://github.com/RyanKaleliGabriel/Shoply/issues"
   },
   "homepage": "https://github.com/RyanKaleliGabriel/Shoply#readme",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/morgan": "^1.9.9",
+    "typescript": "^5.7.2"
+  },
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "morgan": "^1.10.0"
-  },
-  "devDependencies": {
-    "@types/express": "^5.0.0",
-    "@types/morgan": "^1.9.9"
   }
 }
