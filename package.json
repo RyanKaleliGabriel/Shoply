@@ -1,0 +1,28 @@
+{
+  "name": "shoply",
+  "version": "1.0.0",
+  "description": "Scalable E-Commerce Platform",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RyanKaleliGabriel/Shoply.git"
+  },
+  "author": "Ryan Kaleli Gabriel",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RyanKaleliGabriel/Shoply/issues"
+  },
+  "homepage": "https://github.com/RyanKaleliGabriel/Shoply#readme",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/morgan": "^1.9.9"
+  }
+}
