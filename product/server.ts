@@ -3,9 +3,9 @@ import app from "./app";
 
 dotenv.config();
 
-const Port = process.env.PORT;
+const Port = process.env.PORT_PRODUCT;
 const Environment = process.env.NODE_ENV;
-const Service = process.env.SERVICE;
+const Service = process.env.SERVICE_PRODUCT;
 
 app.listen(Port, () => {
   console.log(`${Service} server is running on ${Environment} development.`);
