@@ -15,11 +15,11 @@ FROM node:18-alpine
 
 WORKDIR /
 
-EXPOSE 3004
+EXPOSE 5003
 
 COPY --from=builder /dist ./dist
 
 COPY package*.json ./
 RUN npm install
 
-CMD ["npm", "dev"]
+CMD ["npm", "start"]

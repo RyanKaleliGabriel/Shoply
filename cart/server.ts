@@ -1,13 +1,13 @@
-import app from "./app"
-import dotenv from "dotenv"
+import app from "./app";
+import dotenv from "dotenv";
 
-dotenv.config()
+dotenv.config();
 
-const Environment = process.env.NODE_ENV
-const Port = process.env.PORT
-const Service = process.env.SERVICE
+const Environment = process.env.NODE_ENV;
+const Port = process.env.PORT_CART;
+const Service = process.env.SERVICE_CART;
 
 app.listen(Port, () => {
-    console.log(`${Service} server running on ${Environment} environment.`)
-    console.log(`${Service} sever listening on port ${Port}.`)
-})
+  console.log(`${Service} server running on ${Environment} environment.`);
+  console.log(`${Service} sever listening on port ${Port}.`);
+});
