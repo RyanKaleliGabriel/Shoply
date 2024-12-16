@@ -1,7 +1,5 @@
-import dotenv from "dotenv";
 import app from "./app";
 
-dotenv.config();
 
 const Environment = process.env.NODE_ENV;
 const Port = process.env.PORT_NOTIFICATION;

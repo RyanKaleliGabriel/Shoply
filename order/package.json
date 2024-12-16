@@ -21,10 +21,13 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
     "nodemon": "^3.1.7"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
+    "@types/morgan": "^1.9.9",
     "typescript": "^5.7.2"
   }
 }
