@@ -1,20 +1,16 @@
-version: "3.8"
-
 services:
-  postgres:
-    image: postgres:latest
-    container_name: shoply_db
+  db:
+    image: postgres
     restart: always
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DATABASE: ${POSTGRES_DATABASE}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
@@ -27,12 +23,16 @@ services:
     ports:
       - "5000:5000"
     environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: db
       SERVICE_USER: ${SERVICE_USER}
       PORT_USER: ${PORT_USER}
       NODE_ENV: ${NODE_ENV}
-      DATABASE_URL: ${DATABASE_URL}
     depends_on:
-      - postgres
+      - db
 
   payment:
     build: ./payment
@@ -40,12 +40,14 @@ services:
     ports:
       - "5002:5002"
     environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
       SERVICE_PAYMENT: ${SERVICE_PAYMENT}
       PORT_PAYMENT: ${PORT_PAYMENT}
       NODE_ENV: ${NODE_ENV}
-      DATABASE_URL: ${DATABASE_URL}
     depends_on:
-      - postgres
+      - db
 
   product:
     build: ./product
@@ -53,12 +55,14 @@ services:
     ports:
       - "5001:5001"
     environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
       SERVICE_PRODUCT: ${SERVICE_PRODUCT}
       PORT_PRODUCT: ${PORT_PRODUCT}
       NODE_ENV: ${NODE_ENV}
-      DATABASE_URL: ${DATABASE_URL}
     depends_on:
-      - postgres
+      - db
 
   order:
     build: ./order
@@ -66,12 +70,14 @@ services:
     ports:
       - "5003:5003"
     environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
       SERVICE_ORDER: ${SERVICE_ORDER}
       PORT_ORDER: ${PORT_ORDER}
       NODE_ENV: ${NODE_ENV}
-      DATABASE_URL: ${DATABASE_URL}
     depends_on:
-      - postgres
+      - db
 
   notifications:
     build: ./notifications
@@ -79,12 +85,14 @@ services:
     ports:
       - "5004:5004"
     environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
       SERVICE_NOTIFICATION: ${SERVICE_NOTIFICATION}
       PORT_NOTIFICATION: ${PORT_NOTIFICATION}
       NODE_ENV: ${NODE_ENV}
-      DATABASE_URL: ${DATABASE_URL}
     depends_on:
-      - postgres
+      - db
 
   cart:
     build: ./cart
@@ -92,12 +100,14 @@ services:
     ports:
       - "5005:5005"
     environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
       SERVICE_CART: ${SERVICE_CART}
       PORT_CART: ${PORT_CART}
       NODE_ENV: ${NODE_ENV}
-      DATABASE_URL: ${DATABASE_URL}
     depends_on:
-      - postgres
+      - db
 
   nginx:
     image: nginx:latest
