@@ -40,7 +40,6 @@ const createSendToken = (
   });
 };
 
-
 export const protect = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     let token;
@@ -116,7 +115,7 @@ export const signup = catchAsync(
       return next(new AppError("Please provide a valid email", 400));
     }
     const hashedPassword = await hashPassword(password);
-    console.log(hashPassword)
+    console.log(hashPassword);
     const result = await pool.query(
       "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
       [username, email, hashedPassword]
@@ -168,7 +167,7 @@ export const updatePassword = catchAsync(
       req.user.id,
     ]);
     const user = result.rows[0];
-    console.log(user)
+    console.log(user);
 
     // Validate the current password
     if (!(await correctPassword(req.body.passwordCurrent, user.password))) {
@@ -185,7 +184,7 @@ export const updatePassword = catchAsync(
       );
     }
     // // Update the password
-    const hashedPassword = await hashPassword(req.body.password)
+    const hashedPassword = await hashPassword(req.body.password);
     const passwordUpdateResult = await pool.query(
       "UPDATE users SET password = $1 WHERE id = $2 RETURNING *",
       [hashedPassword, user.id]
@@ -196,3 +195,58 @@ export const updatePassword = catchAsync(
     createSendToken(updatedUser, 201, res, req);
   }
 );
+
+export const getMe = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await pool.query("SELECT * FROM users WHERE id = $1", [
+      req.user.id,
+    ]);
+
+    const user = result.rows[0];
+
+    if (!user) {
+      return next(new AppError("No user found with that id", 404));
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        data: user,
+      },
+    });
+  }
+);
+
+export const updateMe = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await pool.query(
+      "UPDATE users SET username = $2 WHERE id=$1 RETURNING *",
+      [req.user.id, req.body.username]
+    );
+
+    const user = result.rows[0];
+    res.status(201).json({
+      status: "success",
+      data: {
+        data: user,
+      },
+    });
+  }
+);
+
+export const deleteMe = catchAsync(
+  async ( req: Request, res: Response, next: NextFunction) => {
+    console.log(req.user.id)
+    const result = await pool.query("DELETE FROM users WHERE id=$1", [
+      req.user.id,
+    ]);
+    const user = result.rows[0];
+    res.status(204).json({
+      status: "success",
+      data: null,
+    });
+  }
+);
+
+
+// Oauth 2
