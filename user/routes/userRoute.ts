@@ -2,12 +2,14 @@ import express from "express";
 import {
   deleteMe,
   getMe,
+  googleRedirect,
   login,
   logout,
   protect,
+  signINGoogle,
   signup,
   updateMe,
-  updatePassword,
+  updatePassword
 } from "../controllers/userController";
 
 const router = express.Router();
@@ -15,6 +17,8 @@ const router = express.Router();
 router.post("/signup", signup);
 router.post("/login", login);
 router.get("/logout", logout);
+router.get("/signInGoogle", signINGoogle);
+router.get('/google/callback', googleRedirect);
 
 router.use(protect);
 

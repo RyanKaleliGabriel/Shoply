@@ -235,8 +235,8 @@ export const updateMe = catchAsync(
 );
 
 export const deleteMe = catchAsync(
-  async ( req: Request, res: Response, next: NextFunction) => {
-    console.log(req.user.id)
+  async (req: Request, res: Response, next: NextFunction) => {
+    console.log(req.user.id);
     const result = await pool.query("DELETE FROM users WHERE id=$1", [
       req.user.id,
     ]);
@@ -248,5 +248,83 @@ export const deleteMe = catchAsync(
   }
 );
 
+const GOOGLE_OAUTH_URL = process.env.GOOGLE_OAUTH_URL;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CALLBACK_URL = "http://127.0.0.1/api/v1/users/google/callback";
+const GOOGLE_OAUTH_SCOPES = [
+  "https%3A//www.googleapis.com/auth/userinfo.email",
+
+  "https%3A//www.googleapis.com/auth/userinfo.profile",
+];
 
 // Oauth 2
+export const signINGoogle = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const state = "some_state";
+    const scopes = GOOGLE_OAUTH_SCOPES.join(" ");
+    const GOOGLE_OAUTH_CONSENT_SCREEN_URL = `${GOOGLE_OAUTH_URL}?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${GOOGLE_CALLBACK_URL}&access_type=offline&response_type=code&state=${state}&scope=${scopes}`;
+    res.status(200).json({
+      status: "success",
+      data: { data: GOOGLE_OAUTH_CONSENT_SCREEN_URL },
+    });
+  }
+);
+
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_ACCESS_TOKEN_URL = process.env.GOOGLE_ACCESS_TOKEN_URL;
+
+export const googleRedirect = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { code } = req.query;
+    if (!code) {
+      return next(new AppError("Authorization code is missing", 400));
+    }
+
+    const data = {
+      code,
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      redirect_uri: "http://127.0.0.1/api/v1/users/google/callback",
+      grant_type: "authorization_code",
+    };
+    const response = await fetch(GOOGLE_ACCESS_TOKEN_URL!, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    const access_token_data = await response.json();
+    if (!response) {
+      next(new AppError("Failed to fetch access token", 404));
+    }
+
+    // Verify and extract information in the Google ID token
+    const { id_token } = access_token_data;
+
+    const token_info_response = await fetch(
+      `${process.env.GOOGLE_TOKEN_INFO_URL}?id_token=${id_token}`
+    );
+
+    const token_info_data = await token_info_response.json();
+    const { email, name } = token_info_data;
+
+    //  Use the information in the Google ID token to manage user authentication
+    const result = await pool.query("SELECT * FROM users WHERE email=$1", [
+      email,
+    ]);
+    const user = result.rows[0];
+
+    if (!user) {
+      const insertResult = await pool.query(
+        "INSERT INTO users (username, email) VALUES ($1, $2) RETURNING *",
+        [name, email]
+      );
+      const newUser = insertResult.rows[0];
+      createSendToken(newUser, 201, res, req);
+    }
+
+    createSendToken(user, 200, res, req);
+  }
+);
