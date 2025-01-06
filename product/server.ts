@@ -1,7 +1,7 @@
 import app from "./app";
 import { Client } from "pg";
 
-const Port = process.env.PORT_PRODUCT;
+const PORT_PRODUCT = process.env.PORT_PRODUCT;
 const Environment = process.env.NODE_ENV;
 const Service = process.env.SERVICE_PRODUCT;
 
@@ -12,25 +12,25 @@ const port = parseInt(process.env.POSTGRES_PORT || "5432");
 const database = process.env.POSTGRES_DB;
 
 const client = new Client({
-  user,
-  password,
   host,
   port,
+  user,
+  password,
   database,
 });
 
-const connectDb = async () => {
+const connectDB = async () => {
   try {
-    await client.connect();
-    console.log("Connect to Db");
+    await client.connect(); // Simple query to test connection
+    console.log("Connected to Db");
   } catch (err) {
-    console.error("Error when connecting to database", err);
+    console.error("Error when connecting to database.", err);
   }
 };
 
-connectDb();
+connectDB();
 
-app.listen(Port, () => {
+app.listen(PORT_PRODUCT, () => {
   console.log(`${Service} server is running on ${Environment} development.`);
-  console.log(`${Service} server is listening on port ${Port}.`);
+  console.log(`${Service} server is listening on port ${PORT_PRODUCT}.`);
 });

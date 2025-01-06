@@ -17,31 +17,31 @@ services:
       timeout: 35s
       retries: 5
 
-  user:
-    build: ./user
-    container_name: user_service
-    ports:
-      - "5000:5000"
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: db
-      SERVICE_USER: ${SERVICE_USER}
-      PORT_USER: ${PORT_USER}
-      NODE_ENV: ${NODE_ENV}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_COOKIE_EXPIRES_IN: ${JWT_COOKIE_EXPIRES_IN}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GOOGLE_OAUTH_URL : ${GOOGLE_OAUTH_URL}
-      GOOGLE_ACCESS_TOKEN_URL: ${GOOGLE_ACCESS_TOKEN_URL}
-      GOOGLE_TOKEN_INFO_URL: ${GOOGLE_TOKEN_INFO_URL}
+  # user:
+  #   build: ./user
+  #   container_name: user_service
+  #   ports:
+  #     - "5000:5000"
+  #   environment:
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #     POSTGRES_PORT: ${POSTGRES_PORT}
+  #     POSTGRES_HOST: db
+  #     SERVICE_USER: ${SERVICE_USER}
+  #     PORT_USER: ${PORT_USER}
+  #     NODE_ENV: ${NODE_ENV}
+  #     JWT_SECRET: ${JWT_SECRET}
+  #     JWT_COOKIE_EXPIRES_IN: ${JWT_COOKIE_EXPIRES_IN}
+  #     JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+  #     GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+  #     GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+  #     GOOGLE_OAUTH_URL : ${GOOGLE_OAUTH_URL}
+  #     GOOGLE_ACCESS_TOKEN_URL: ${GOOGLE_ACCESS_TOKEN_URL}
+  #     GOOGLE_TOKEN_INFO_URL: ${GOOGLE_TOKEN_INFO_URL}
 
-    depends_on:
-      - db
+  #   depends_on:
+  #     - db
 
   # payment:
   #   build: ./payment
@@ -58,20 +58,22 @@ services:
   #   depends_on:
   #     - db
 
-  # product:
-  #   build: ./product
-  #   container_name: product_service
-  #   ports:
-  #     - "5001:5001"
-  #   environment:
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-  #     POSTGRES_USER: ${POSTGRES_USER}
-  #     POSTGRES_DB: ${POSTGRES_DB}
-  #     SERVICE_PRODUCT: ${SERVICE_PRODUCT}
-  #     PORT_PRODUCT: ${PORT_PRODUCT}
-  #     NODE_ENV: ${NODE_ENV}
-  #   depends_on:
-  #     - db
+  product:
+    build: ./product
+    container_name: product_service
+    ports:
+      - "5001:5001"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: db
+      SERVICE_PRODUCT: ${SERVICE_PRODUCT}
+      PORT_PRODUCT: ${PORT_PRODUCT}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      - db
 
   # order:
   #   build: ./order
@@ -125,8 +127,8 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-      - user
-      # - product
+      # - user
+      - product
       # - payment
       # - cart
       # - order

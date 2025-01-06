@@ -17,6 +17,7 @@ if (process.env.NODE_ENV === "development") {
 
 app.use("/api/v1/products", productRoute);
 
+
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
   return next(
     new AppError(`Can't find ${req.originalUrl} on this server`, 401)
