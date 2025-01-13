@@ -58,22 +58,22 @@ services:
   #   depends_on:
   #     - db
 
-  product:
-    build: ./product
-    container_name: product_service
-    ports:
-      - "5001:5001"
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: db
-      SERVICE_PRODUCT: ${SERVICE_PRODUCT}
-      PORT_PRODUCT: ${PORT_PRODUCT}
-      NODE_ENV: ${NODE_ENV}
-    depends_on:
-      - db
+  # product:
+  #   build: ./product
+  #   container_name: product_service
+  #   ports:
+  #     - "5001:5001"
+  #   environment:
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #     POSTGRES_PORT: ${POSTGRES_PORT}
+  #     POSTGRES_HOST: db
+  #     SERVICE_PRODUCT: ${SERVICE_PRODUCT}
+  #     PORT_PRODUCT: ${PORT_PRODUCT}
+  #     NODE_ENV: ${NODE_ENV}
+  #   depends_on:
+  #     - db
 
   # order:
   #   build: ./order
@@ -105,20 +105,22 @@ services:
   #   depends_on:
   #     - db
 
-  # cart:
-  #   build: ./cart
-  #   container_name: cart_service
-  #   ports:
-  #     - "5005:5005"
-  #   environment:
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-  #     POSTGRES_USER: ${POSTGRES_USER}
-  #     POSTGRES_DB: ${POSTGRES_DB}
-  #     SERVICE_CART: ${SERVICE_CART}
-  #     PORT_CART: ${PORT_CART}
-  #     NODE_ENV: ${NODE_ENV}
-  #   depends_on:
-  #     - db
+  cart:
+    build: ./cart
+    container_name: cart_service
+    ports:
+      - "5005:5005"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: db
+      SERVICE_CART: ${SERVICE_CART}
+      PORT_CART: ${PORT_CART}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      - db
 
   nginx:
     image: nginx:latest
@@ -128,9 +130,9 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       # - user
-      - product
+      # - product
       # - payment
-      # - cart
+      - cart
       # - order
       # - notifications
 
