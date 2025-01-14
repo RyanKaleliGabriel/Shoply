@@ -4,16 +4,21 @@ import pool from "../db/con";
 import AppError from "../utils/appError";
 import validator from "validator";
 import { numberValidator, stringValidator } from "../utils/validators";
+import APIfeatures from "../utils/ApiFeatures";
 
 export const getAllProducts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     // Implement pagination, filtering and sorting.
-    const result = await pool.query("SELECT * FROM products");
-    const products = result.rows;
+    const baseQuery = "SELECT * FROM products";
+    const features = new APIfeatures(baseQuery, req.query);
+    features.filter().sort().limitFields().paginate();
+
+    const result = await pool.query(features.query, features.values);
+
     return res.status(200).json({
       status: "success",
-      result: products.length,
-      data: { data: products },
+      result: result.rows.length,
+      data: result.rows,
     });
   }
 );
