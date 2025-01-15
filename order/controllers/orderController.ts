@@ -1,6 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import catchAsync from "../utils/catchAsync";
 import pool from "../db/con";
+import AppError from "../utils/appError";
+
+const BASE_URL = process.env.BASE_URL;
 
 export const getOrders = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -38,34 +41,49 @@ export const getOrder = catchAsync(
 
 export const createOrder = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const client = await pool.connect();
-    await client.query("BEGIN");
+    const response = await fetch(`${BASE_URL}/api/v1/users/getMe`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-    const userId = 1;
-    const resultOrder = await client.query(
-      "INSERT INTO orders (status, user_id) VALUES($1, $2) RETURNING *",
-      ["pending", userId]
-    );
+    // if (!response.ok) {
+    //   return next(
+    //     new AppError("You are not authenticated to perform this action", 403)
+    //   );
+    // }
 
-    const order = resultOrder.rows[0];
-    const productId = req.body.productId;
-    const orderId = order.id;
-    const quantity = req.body.quantity;
+    const data = await response.json();
 
-    const productOrder = await client.query(
-      "INSERT INTO product_order (product_id, quantity, order_id) VALUES($1, $2, $3)",
-      [productId, quantity, orderId]
-    );
+    // const client = await pool.connect();
+    // await client.query("BEGIN");
 
-    const finalOrderResult = await client.query(
-      "SELECT * FROM product_order WHERE order_id=$1",
-      [orderId]
-    );
+    // const userId = 1;
+    // const resultOrder = await client.query(
+    //   "INSERT INTO orders (status, user_id) VALUES($1, $2) RETURNING *",
+    //   ["pending", userId]
+    // );
 
-    await client.query("COMMIT");
+    // const { products } = req.body;
+
+    // const values = [];
+    // const placeholders = products.map(
+    //   (_: any, index: any) =>
+    //     `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`
+    // );
+
+    // console.log(placeholders);
+
+    // products.forEach((product: any) => {
+    //   values.push(product.id, product.quantity);
+    // });
+
+    // console.log(products);
+    // await client.query("COMMIT");
     return res.status(201).json({
       status: "success",
-      data: finalOrderResult.rows,
+      data,
     });
   }
 );
