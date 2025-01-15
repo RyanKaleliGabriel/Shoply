@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS products (
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
     price DECIMAL(10, 2) NOT NULL,
     description TEXT NOT NULL,
+    stock INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -40,15 +41,17 @@ CREATE TABLE IF NOT EXISTS products (
 -- Orders Table
 CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
-    total_amount DECIMAL(10,2) NOT NULL,
+    user_id INT NOT NULL,
     status VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 );
 
 -- Product-Order Junction Table
 CREATE TABLE IF NOT EXISTS product_order (
     product_id INT NOT NULL,
-    order_id INT NOT NULL,
+    quantity INT NOT NULL,
+    order_id INT NOT NULL CHECK (quantity > 0),
     PRIMARY KEY (product_id, order_id),
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
