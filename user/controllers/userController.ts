@@ -34,9 +34,7 @@ const createSendToken = (
   res.status(statusCode).json({
     status: "success",
     token,
-    data: {
-      user,
-    },
+    data: user
   });
 };
 
@@ -210,9 +208,7 @@ export const getMe = catchAsync(
 
     res.status(200).json({
       status: "success",
-      data: {
-        data: user,
-      },
+      data: user
     });
   }
 );
@@ -227,9 +223,7 @@ export const updateMe = catchAsync(
     const user = result.rows[0];
     res.status(201).json({
       status: "success",
-      data: {
-        data: user,
-      },
+      data: user
     });
   }
 );

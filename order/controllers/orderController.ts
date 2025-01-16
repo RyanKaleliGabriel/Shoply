@@ -41,28 +41,24 @@ export const getOrder = catchAsync(
 
 export const createOrder = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const response = await fetch(`${BASE_URL}/api/v1/users/getMe`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
 
-    // if (!response.ok) {
-    //   return next(
-    //     new AppError("You are not authenticated to perform this action", 403)
-    //   );
-    // }
 
-    const data = await response.json();
+
+    // Fetch Items in the cart
+
+    // Confrim if the user has something in the cart.
+    // Fetch the cart with the products associated with the user.
+    // Place the order
+    // Initiate Payment Process - 
+    // Verify Payment Status - If payment is successful, update the order to "paid" status. If payment fails, keep the order as "pending", allowing a retry.
+    // Clear the Cart (Only After Payment Success) After a successful payment, delete the cart items but keep the order record.
 
     // const client = await pool.connect();
     // await client.query("BEGIN");
 
-    // const userId = 1;
     // const resultOrder = await client.query(
     //   "INSERT INTO orders (status, user_id) VALUES($1, $2) RETURNING *",
-    //   ["pending", userId]
+    //   ["pending", user.id]
     // );
 
     // const { products } = req.body;
@@ -79,12 +75,11 @@ export const createOrder = catchAsync(
     //   values.push(product.id, product.quantity);
     // });
 
-    // console.log(products);
     // await client.query("COMMIT");
-    return res.status(201).json({
-      status: "success",
-      data,
-    });
+    // return res.status(201).json({
+    //   status: "success",
+    //   data:
+    // });
   }
 );
 

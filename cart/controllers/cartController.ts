@@ -4,20 +4,34 @@ import pool from "../db/con";
 import AppError from "../utils/appError";
 import { numberValidator } from "../utils/validators";
 
-export const getItems = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const userId = 1;
-    const resultUser = await pool.query("SELECT * FROM users WHERE id=$1", [
-      userId,
-    ]);
-    const user = resultUser.rows[0];
+const USER_URL = process.env.USER_URL;
 
-    if (!user) {
-      return next(new AppError("User not authenticated", 401));
+export const authenticated = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const token = req.headers.cookie?.split("=").at(1);
+    const response = await fetch(`${USER_URL}/api/v1/users/getMe`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return next(new AppError("Failed to authenticate user. Try again.", 403));
     }
 
+    const data = await response.json();
+    req.user = data.data;
+    next();
+  }
+);
+
+export const getItems = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const result = await pool.query("SELECT * FROM carts WHERE user_id=$1", [
-      userId,
+      req.user.id,
     ]);
     const items = result.rows;
 
@@ -49,14 +63,15 @@ export const getItem = catchAsync(
 
 export const addItem = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { productId, user } = req.body;
+    const { productId } = req.body;
 
     numberValidator(productId, "Product", next);
 
     const productResult = await pool.query(
-      "SELECT * FROM categories WHERE id=$1",
+      "SELECT * FROM products WHERE id=$1",
       [productId]
     );
+    
     const product = productResult.rows[0];
     if (!product) {
       return next(new AppError("No product matching that id", 404));
@@ -64,7 +79,7 @@ export const addItem = catchAsync(
 
     const result = await pool.query(
       "INSERT INTO carts (product_id, user_id) VALUES ($1, $2) RETURNING *",
-      [productId, user]
+      [productId, req.user.id]
     );
     const item = result.rows[0];
 

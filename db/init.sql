@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS orders (
     user_id INT NOT NULL,
     status VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Product-Order Junction Table
@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS carts (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     product_id INT NOT NULL,
+    quantity INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
