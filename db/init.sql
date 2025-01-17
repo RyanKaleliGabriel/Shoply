@@ -1,4 +1,7 @@
 -- User Role ENUM Type
+
+
+-- ON DELETE CASCADE means that when a referenced row in the parent table is deleted, all related rows in the child table are also automatically deleted.
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
@@ -44,7 +47,7 @@ CREATE TABLE IF NOT EXISTS orders (
     user_id INT NOT NULL,
     status VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Product-Order Junction Table
@@ -62,6 +65,7 @@ CREATE TABLE IF NOT EXISTS carts (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     product_id INT NOT NULL,
+    quantity INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

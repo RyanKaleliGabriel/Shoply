@@ -35,21 +35,20 @@ export const getProduct = catchAsync(
 
     return res.status(200).json({
       status: "success",
-      data: {
-        data: product,
-      },
+      data:product
     });
   }
 );
 
 export const createProduct = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { name, categoryId, price, description } = req.body;
+    const { name, categoryId, price, description, stock } = req.body;
 
     stringValidator(name, "Name", next);
     stringValidator(description, "Description", next);
     numberValidator(price, "Price", next);
     numberValidator(categoryId, "Category", next);
+    numberValidator(stock, "Stock", next)
 
     const categoryResult = await pool.query(
       "SELECT * FROM categories WHERE id=$1",
@@ -62,16 +61,14 @@ export const createProduct = catchAsync(
 
     // Create a product with the category.
     const result = await pool.query(
-      "INSERT INTO products (name, category_id, price, description) VALUES($1, $2, $3, $4) RETURNING *",
-      [name, category.id, price, description]
+      "INSERT INTO products (name, category_id, price, description, stock) VALUES($1, $2, $3, $4, $5) RETURNING *",
+      [name, category.id, price, description, stock]
     );
 
     const product = result.rows[0];
     return res.status(201).json({
       status: "success",
-      data: {
-        data: product,
-      },
+      data: product
     });
   }
 );
@@ -116,9 +113,7 @@ export const updateProduct = catchAsync(
     const product = result.rows[0];
     return res.status(201).json({
       status: "success",
-      data: {
-        data: product,
-      },
+      data: product
     });
   }
 );
@@ -132,9 +127,7 @@ export const getAllCategories = catchAsync(
     return res.status(200).json({
       status: "success",
       results: categories.length,
-      data: {
-        data: categories,
-      },
+      data: categories
     });
   }
 );
@@ -154,9 +147,7 @@ export const getCategory = catchAsync(
 
     return res.status(200).json({
       status: "success",
-      data: {
-        data: category,
-      },
+      data:category
     });
   }
 );
@@ -177,9 +168,7 @@ export const createCategory = catchAsync(
 
     return res.status(201).json({
       status: "success",
-      data: {
-        data: newCategory,
-      },
+      data: newCategory
     });
   }
 );
@@ -201,9 +190,7 @@ export const updateCategory = catchAsync(
 
     return res.status(201).json({
       status: "success",
-      data: {
-        data: updatedCategory,
-      },
+      data: updateCategory
     });
   }
 );

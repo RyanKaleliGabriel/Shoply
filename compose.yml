@@ -42,7 +42,12 @@ services:
       GOOGLE_OAUTH_URL : ${GOOGLE_OAUTH_URL}
       GOOGLE_ACCESS_TOKEN_URL: ${GOOGLE_ACCESS_TOKEN_URL}
       GOOGLE_TOKEN_INFO_URL: ${GOOGLE_TOKEN_INFO_URL}
-      BASE_URL: ${BASE_URL}
+      USER_URL: ${USER_URL}
+      PRODUCT_URL: ${PRODUCT_URL}
+      ORDER_URL: ${ORDER_URL}
+      CART_URL: ${CART_URL}
+      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
+      PAYMENT_URL: ${PAYMENT_URL}
 
     depends_on:
       - db
@@ -60,6 +65,12 @@ services:
   #     SERVICE_PAYMENT: ${SERVICE_PAYMENT}
   #     PORT_PAYMENT: ${PORT_PAYMENT}
   #     NODE_ENV: ${NODE_ENV}
+        # USER_URL: ${USER_URL}
+        # PRODUCT_URL: ${PRODUCT_URL}
+        # ORDER_URL: ${ORDER_URL}
+        # CART_URL: ${CART_URL}
+        # NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
+        # PAYMENT_URL: ${PAYMENT_URL}
   #   depends_on:
   #     - db
 
@@ -78,7 +89,12 @@ services:
       SERVICE_PRODUCT: ${SERVICE_PRODUCT}
       PORT_PRODUCT: ${PORT_PRODUCT}
       NODE_ENV: ${NODE_ENV}
-      BASE_URL: ${BASE_URL}
+      USER_URL: ${USER_URL}
+      PRODUCT_URL: ${PRODUCT_URL}
+      ORDER_URL: ${ORDER_URL}
+      CART_URL: ${CART_URL}
+      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
+      PAYMENT_URL: ${PAYMENT_URL}
     depends_on:
       - db
 
@@ -97,7 +113,13 @@ services:
       SERVICE_ORDER: ${SERVICE_ORDER}
       PORT_ORDER: ${PORT_ORDER}
       NODE_ENV: ${NODE_ENV}
-      BASE_URL: ${BASE_URL}
+      USER_URL: ${USER_URL}
+      PRODUCT_URL: ${PRODUCT_URL}
+      ORDER_URL: ${ORDER_URL}
+      CART_URL: ${CART_URL}
+      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
+      PAYMENT_URL: ${PAYMENT_URL}
+
     depends_on:
       - db
 
@@ -114,6 +136,12 @@ services:
   #     SERVICE_NOTIFICATION: ${SERVICE_NOTIFICATION}
   #     PORT_NOTIFICATION: ${PORT_NOTIFICATION}
   #     NODE_ENV: ${NODE_ENV}
+        # USER_URL: ${USER_URL}
+        # PRODUCT_URL: ${PRODUCT_URL}
+        # ORDER_URL: ${ORDER_URL}
+        # CART_URL: ${CART_URL}
+        # NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
+        # PAYMENT_URL: ${PAYMENT_URL}
   #   depends_on:
   #     - db
 
@@ -132,7 +160,12 @@ services:
       SERVICE_CART: ${SERVICE_CART}
       PORT_CART: ${PORT_CART}
       NODE_ENV: ${NODE_ENV}
-      BASE_URL: ${BASE_URL}
+      USER_URL: ${USER_URL}
+      PRODUCT_URL: ${PRODUCT_URL}
+      ORDER_URL: ${ORDER_URL}
+      CART_URL: ${CART_URL}
+      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
+      PAYMENT_URL: ${PAYMENT_URL}
     depends_on:
       - db
 
