@@ -1,4 +1,7 @@
 -- User Role ENUM Type
+
+
+-- ON DELETE CASCADE means that when a referenced row in the parent table is deleted, all related rows in the child table are also automatically deleted.
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN

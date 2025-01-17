@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import dotenv from "dotenv";
+import cors from "cors";
 
 import cartRoute from "./routes/cartRoute";
 import AppError from "./utils/appError";
@@ -8,6 +9,12 @@ import globalErrorHandler from "./controllers/errorController";
 
 dotenv.config();
 const app = express();
+
+const corsOptions = {
+  origin: "http://127.0.0.1",
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
 app.use(express.json());
 

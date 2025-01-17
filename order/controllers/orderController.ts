@@ -3,11 +3,55 @@ import catchAsync from "../utils/catchAsync";
 import pool from "../db/con";
 import AppError from "../utils/appError";
 
-const BASE_URL = process.env.BASE_URL;
+const USER_URL = process.env.USER_URL;
+const PRODUCT_URL = process.env.PRODUCT_URL;
+const CART_URL = process.env.CART_URL;
+
+export const authenticated = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const token =
+      req.headers.cookie?.split("=").at(1) ||
+      req.headers.authorization?.split(" ").at(1);
+    const response = await fetch(`${USER_URL}/api/v1/users/getMe`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    console.log(response);
+
+    if (!response.ok) {
+      return next(new AppError("Failed to authenticate user. Try again.", 403));
+    }
+
+    const data = await response.json();
+    req.user = data.data;
+    req.token = token;
+    next();
+  }
+);
 
 export const getOrders = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const userId = 1;
+    const user = req.user.id;
+    const result = await pool.query("SELECT * FROM orders WHERE user_id=$1", [
+      user,
+    ]);
+    const orders = result.rows;
+    return res.status(200).json({
+      status: "success",
+      result: orders.length,
+      data: orders,
+    });
+  }
+);
+
+export const getOrder = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user.id;
 
     const result = await pool.query(
       `
@@ -35,51 +79,57 @@ export const getOrders = catchAsync(
   }
 );
 
-export const getOrder = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {}
-);
-
 export const createOrder = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-
-
-
+    const token = req.token;
     // Fetch Items in the cart
-
-    // Confrim if the user has something in the cart.
     // Fetch the cart with the products associated with the user.
+    const response = await fetch(`${CART_URL}/api/v1/cart/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+    const items = data.data;
+
+    // Confirm if the user has something in the cart.
+    if (items === 0) {
+      return next(new AppError("No items found in cart", 403));
+    }
+
+    const resultOrder = await pool.query(
+      "INSERT INTO orders (status, user_id) VALUES($1, $2) RETURNING *",
+      ["pending", req.user.id]
+    );
+    const order: any = resultOrder.rows[0];
+
+    const values: any = [];
+    const placeholders = items.map(
+      (_: any, index: any) =>
+        `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`
+    );
+
+    items.forEach((item: any) => {
+      values.push(item.product_id, item.quantity, order.id);
+    });
+
+    const client = await pool.connect();
+    await client.query("BEGIN");
+
     // Place the order
-    // Initiate Payment Process - 
+    const query = `INSERT INTO product_order (product_id, quantity, order_id) VALUES ${placeholders} RETURNING *`;
+    const result = await pool.query(query, values);
+    await client.query("COMMIT");
+    return res.status(201).json({
+      status: "success",
+      data: result.rows,
+    });
+
+    // Initiate Payment Process -
     // Verify Payment Status - If payment is successful, update the order to "paid" status. If payment fails, keep the order as "pending", allowing a retry.
     // Clear the Cart (Only After Payment Success) After a successful payment, delete the cart items but keep the order record.
-
-    // const client = await pool.connect();
-    // await client.query("BEGIN");
-
-    // const resultOrder = await client.query(
-    //   "INSERT INTO orders (status, user_id) VALUES($1, $2) RETURNING *",
-    //   ["pending", user.id]
-    // );
-
-    // const { products } = req.body;
-
-    // const values = [];
-    // const placeholders = products.map(
-    //   (_: any, index: any) =>
-    //     `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`
-    // );
-
-    // console.log(placeholders);
-
-    // products.forEach((product: any) => {
-    //   values.push(product.id, product.quantity);
-    // });
-
-    // await client.query("COMMIT");
-    // return res.status(201).json({
-    //   status: "success",
-    //   data:
-    // });
   }
 );
 

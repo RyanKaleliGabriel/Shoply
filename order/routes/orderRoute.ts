@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  authenticated,
   createOrder,
   deleteOrder,
   getOrder,
@@ -8,6 +9,8 @@ import {
 
 const router = express.Router();
 
+
+router.use(authenticated)
 router.get("/", getOrders);
 router.get("/:id", getOrder);
 router.post("/", createOrder);

@@ -16,7 +16,6 @@ const corsOptions = {
   origin: "http://127.0.0.1",
   credentials: true,
 };
-
 app.use(cors(corsOptions));
 
 if (process.env.NODE_ENV === "development") {
