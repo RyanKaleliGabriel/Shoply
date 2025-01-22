@@ -6,7 +6,7 @@ import validator from "validator";
 import { numberValidator, stringValidator } from "../utils/validators";
 import APIfeatures from "../utils/ApiFeatures";
 
-export const getAllProducts = catchAsync(
+export const getProducts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     // Implement pagination, filtering and sorting.
     const baseQuery = "SELECT * FROM products";
@@ -118,7 +118,7 @@ export const updateProduct = catchAsync(
 );
 
 // Categories
-export const getAllCategories = catchAsync(
+export const getCategories = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const result = await pool.query("SELECT * FROM categories");
     const categories = result.rows;

@@ -4,8 +4,8 @@ import {
   createProduct,
   deleteCategory,
   deleteProduct,
-  getAllCategories,
-  getAllProducts,
+  getCategories,
+  getProducts,
   getCategory,
   getProduct,
   updateCategory,
@@ -14,17 +14,18 @@ import {
 
 const router = express.Router();
 
-router.get("/", getAllProducts);
+router.get("/", getProducts);
 router.get("/:id", getProduct);
-router.get("/categories/all", getAllCategories);
+router.get("/categories/all", getCategories);
 router.get("/categories/:id", getCategory);
 
-router.post("/createProduct", createProduct);
-router.post("/categories/createCategory", createCategory);
+router.post("/", createProduct);
+router.post("/categories/create", createCategory);
 
 router.patch("/:id", updateProduct);
 router.patch("/categories/:id", updateCategory);
 
 router.delete("/:id", deleteProduct);
 router.delete("/categories/:id", deleteCategory);
+
 export default router;

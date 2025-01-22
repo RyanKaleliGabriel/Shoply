@@ -3,6 +3,7 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 
 import productRoute from "./routes/productRoute";
+
 import AppError from "./utils/appError";
 import globalErrorHandler from "./controllers/errorController";
 
@@ -16,7 +17,6 @@ if (process.env.NODE_ENV === "development") {
 }
 
 app.use("/api/v1/products", productRoute);
-
 
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
   return next(
