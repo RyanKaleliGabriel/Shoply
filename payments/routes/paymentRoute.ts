@@ -9,11 +9,11 @@ import {
 
 const router = express.Router();
 
-router.use(authenticated);
+// router.use(authenticated);
 router.use(accessToken);
 
 router.post("/stkPush", accessToken, intiateSTKPush);
-router.post("/stkPushCallback/:orderId", stkPushCallback);
+router.post("/stkPushCallback", stkPushCallback);
 router.post("/confirmPayment/:checkoutRequestId", confirmPayment);
 
 export default router;

@@ -12,11 +12,11 @@ const app = express();
 
 app.use(express.json());
 
-const corsOptions = {
-  origin: "http://127.0.0.1",
-  credentials: true,
-};
-app.use(cors(corsOptions));
+// const corsOptions = {
+//   origin: "http://127.0.0.1",
+//   credentials: true,
+// };
+app.use(cors());
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));

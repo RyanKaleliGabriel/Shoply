@@ -23,6 +23,6 @@ export const accessToken = catchAsync(
       return next(new AppError("Access token not found.", 404));
     }
     req.safaricomAccessToken = response.data.access_token;
-    console.log(req.safaricomAccessToken)
+    next();
   }
 );
