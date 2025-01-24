@@ -1,12 +1,16 @@
 export interface User {
-    id:number
-    username:string
-    email:string
-    password:string
-    created_at:string
-    updated_at:string
+  id: number;
+  username: string;
+  email: string;
+  password: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Token {
-    token: string
+  token: string;
+}
+
+export interface safaricomAccessToken {
+  safaricomAccessToken: string;
 }

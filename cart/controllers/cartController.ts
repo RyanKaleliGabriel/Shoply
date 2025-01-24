@@ -29,7 +29,7 @@ export const authenticated = catchAsync(
 
     const data = await response.json();
     req.user = data.data;
-    req.token = token
+    req.token = token;
     next();
   }
 );
@@ -40,29 +40,41 @@ export const getItems = catchAsync(
       req.user.id,
     ]);
     const items = result.rows;
+    const total_amount = items.reduce(
+      (accumulator, currentValue) =>
+        accumulator + currentValue.price * currentValue.quantity,
+      0
+    );
 
-    return res.status(200).json({
-      status: "success",
-      result: items.length,
-      data: items,
+    // SELECT PRODUCTS THAT MATCH THE ONES IN THE CART
+    const response = await fetch(`${PRODUCT_URL}/api/v1/products/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
-  }
-);
 
-export const getItem = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const id = req.params.id;
-
-    const result = await pool.query("SELECT * FROM carts WHERE id=$1", [id]);
-    const item = result.rows[0];
-
-    if (!item) {
-      return next(new AppError("Failed to find item matching that id", 404));
+    if (!response.ok) {
+      return next(new AppError("Failed to fetch product. Try again", 404));
     }
 
+    const data = await response.json();
+    const products = data.data;
+
+    // Return every record with a product name, price and description
+    const mergedItems = items.map((item: any) => {
+      const product = products.find((p: any) => p.id === item.product_id);
+      return {
+        ...item,
+        productName: product.name,
+        productDescription: product.description,
+      };
+    });
+
     return res.status(200).json({
       status: "success",
-      data: item,
+      result: mergedItems.length,
+      data: { items: mergedItems, total_amount },
     });
   }
 );
@@ -103,9 +115,11 @@ export const addItem = catchAsync(
       return next(new AppError("Product already exists in cart", 403));
     }
 
+    console.log(data.data);
+
     const result = await client.query(
-      "INSERT INTO carts (product_id, user_id, quantity) VALUES ($1, $2, $3) RETURNING *",
-      [data.data.id, req.user.id, 1]
+      "INSERT INTO carts (product_id, user_id, quantity, price) VALUES ($1, $2, $3, $4) RETURNING *",
+      [data.data.id, req.user.id, 1, data.data.price]
     );
 
     await client.query("COMMIT");
@@ -113,6 +127,36 @@ export const addItem = catchAsync(
     return res.status(201).json({
       status: "success",
       data: item,
+    });
+  }
+);
+
+export const updateItem = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id;
+
+    const client = await pool.connect();
+    await client.query("BEGIN");
+
+    const resultItem = await client.query("SELECT * FROM carts WHERE id=$1", [
+      id,
+    ]);
+    const item = resultItem.rows[0];
+    if (!item) {
+      return next(new AppError("No item matching that id", 404));
+    }
+
+    const result = await client.query(
+      "UPDATE carts SET quantity=$1 WHERE id=$2 RETURNING *",
+      [req.body.quantity, item.id]
+    );
+    const updatedItem = result.rows[0];
+
+    await client.query("COMMIT");
+
+    return res.status(201).json({
+      status: "success",
+      data: updatedItem,
     });
   }
 );

@@ -51,31 +51,57 @@ export const getOrders = catchAsync(
 
 export const getOrder = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user.id;
+    const response = await fetch(`${PRODUCT_URL}/api/v1/products/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-    const result = await pool.query(
-      `
-      SELECT o.id AS order_id,
-      o.status,
-      o.created_at,
-      po.product_id,
-      po.quantity,
-      p.name as product_name,
-      p.price AS product_price
-      FROM orders o
-      JOIN
-          product_order po ON o.id = po.order_id
-      JOIN 
-          products p ON po.product_id = p.id
-      WHERE 
-          o.user_id = $1
-      ORDER BY
-           o.created_at DESC;
-      `,
-      [userId]
+    if (!response.ok) {
+      return next(new AppError("Failed to fetch product. Try again", 404));
+    }
+
+    const data = await response.json();
+    const products = data.data;
+
+    const id = req.params.id;
+    const client = await pool.connect();
+
+    await client.query("BEGIN");
+
+    const resultOrder = await client.query("SELECT * FROM orders WHERE id=$1", [
+      id,
+    ]);
+    const order = resultOrder.rows[0];
+
+    if (!order) {
+      return next(new AppError("No order matching that id", 404));
+    }
+
+    const result = await client.query(
+      "SELECT * FROM product_order WHERE order_id=$1",
+      [order.id]
     );
 
     const orders = result.rows;
+
+    const ordersWithProducts = orders.map((order: any) => {
+      const product = products.find(
+        (product: any) => product.id === order.product_id
+      );
+      return {
+        ...order,
+        productName: product.name,
+        productPrice: product.price,
+      };
+    });
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      status: "success",
+      data: { products: ordersWithProducts, total_amount: order.total_amount },
+    });
   }
 );
 
@@ -92,7 +118,7 @@ export const createOrder = catchAsync(
       },
     });
     const data = await response.json();
-    const items = data.data;
+    const items = data.data.items;
 
     // Confirm if the user has something in the cart.
     if (items === 0) {
@@ -100,8 +126,8 @@ export const createOrder = catchAsync(
     }
 
     const resultOrder = await pool.query(
-      "INSERT INTO orders (status, user_id) VALUES($1, $2) RETURNING *",
-      ["pending", req.user.id]
+      "INSERT INTO orders (status, user_id, total_amount) VALUES($1, $2, $3) RETURNING *",
+      ["pending", req.user.id, data.data.total_amount]
     );
     const order: any = resultOrder.rows[0];
 
@@ -124,7 +150,7 @@ export const createOrder = catchAsync(
     await client.query("COMMIT");
     return res.status(201).json({
       status: "success",
-      data: result.rows,
+      data: { products: result.rows, total_amount: order.total_amount },
     });
 
     // Initiate Payment Process -
@@ -134,5 +160,52 @@ export const createOrder = catchAsync(
 );
 
 export const deleteOrder = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {}
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id;
+    const client = await pool.connect();
+    await client.query("BEGIN");
+
+    const resultOrder = await client.query("SELECT * FROM orders WHERE id=$1", [
+      id,
+    ]);
+    const order = resultOrder.rows[0];
+
+    if (!order) {
+      return next(new AppError("No order matching that id", 404));
+    }
+    await client.query("DELETE FROM orders WHERE id=$1", [order.id]);
+
+    await client.query("COMMIT");
+    return res.status(204).json({
+      status: "success",
+      data: null,
+    });
+  }
+);
+
+export const updateOrder = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id;
+    const client = await pool.connect();
+    await client.query("BEGIN");
+
+    const resultOrder = await client.query("SELECT * FROM orders WHERE id=$1", [
+      id,
+    ]);
+    const order = resultOrder.rows[0];
+
+    if (!order) {
+      return next(new AppError("No order matching that id", 404));
+    }
+    const result = await client.query(
+      "UPDATE orders SET status=$2 WHERE id=$1 RETURNING *",
+      [order.id, req.body.status]
+    );
+
+    await client.query("COMMIT");
+    return res.status(201).json({
+      status: "success",
+      data: result.rows,
+    });
+  }
 );

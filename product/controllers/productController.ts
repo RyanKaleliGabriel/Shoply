@@ -6,7 +6,7 @@ import validator from "validator";
 import { numberValidator, stringValidator } from "../utils/validators";
 import APIfeatures from "../utils/ApiFeatures";
 
-export const getAllProducts = catchAsync(
+export const getProducts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     // Implement pagination, filtering and sorting.
     const baseQuery = "SELECT * FROM products";
@@ -35,7 +35,7 @@ export const getProduct = catchAsync(
 
     return res.status(200).json({
       status: "success",
-      data:product
+      data: product,
     });
   }
 );
@@ -48,7 +48,7 @@ export const createProduct = catchAsync(
     stringValidator(description, "Description", next);
     numberValidator(price, "Price", next);
     numberValidator(categoryId, "Category", next);
-    numberValidator(stock, "Stock", next)
+    numberValidator(stock, "Stock", next);
 
     const categoryResult = await pool.query(
       "SELECT * FROM categories WHERE id=$1",
@@ -68,7 +68,7 @@ export const createProduct = catchAsync(
     const product = result.rows[0];
     return res.status(201).json({
       status: "success",
-      data: product
+      data: product,
     });
   }
 );
@@ -76,8 +76,7 @@ export const createProduct = catchAsync(
 export const deleteProduct = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
-    const result = await pool.query("DELETE FROM products WHERE id=$1", [id]);
-    const product = result.rows[0];
+    await pool.query("DELETE FROM products WHERE id=$1", [id]);
     return res.status(204).json({
       status: "success",
       data: null,
@@ -113,13 +112,13 @@ export const updateProduct = catchAsync(
     const product = result.rows[0];
     return res.status(201).json({
       status: "success",
-      data: product
+      data: product,
     });
   }
 );
 
 // Categories
-export const getAllCategories = catchAsync(
+export const getCategories = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const result = await pool.query("SELECT * FROM categories");
     const categories = result.rows;
@@ -127,7 +126,7 @@ export const getAllCategories = catchAsync(
     return res.status(200).json({
       status: "success",
       results: categories.length,
-      data: categories
+      data: categories,
     });
   }
 );
@@ -147,7 +146,7 @@ export const getCategory = catchAsync(
 
     return res.status(200).json({
       status: "success",
-      data:category
+      data: category,
     });
   }
 );
@@ -168,7 +167,7 @@ export const createCategory = catchAsync(
 
     return res.status(201).json({
       status: "success",
-      data: newCategory
+      data: newCategory,
     });
   }
 );
@@ -190,7 +189,7 @@ export const updateCategory = catchAsync(
 
     return res.status(201).json({
       status: "success",
-      data: updateCategory
+      data: updateCategory,
     });
   }
 );

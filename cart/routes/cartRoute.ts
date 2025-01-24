@@ -2,17 +2,17 @@ import express from "express";
 import {
   addItem,
   authenticated,
-  getItem,
   getItems,
   removeItem,
+  updateItem,
 } from "../controllers/cartController";
 
 const router = express.Router();
 
 router.use(authenticated);
 router.get("/", getItems);
-router.get("/:id", getItem);
 router.post("/", addItem);
+router.patch("/:id", updateItem);
 router.delete("/:id", removeItem);
 
 export default router;
