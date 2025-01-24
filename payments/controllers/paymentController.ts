@@ -1,10 +1,14 @@
+import axios from "axios";
+import dotenv from "dotenv";
 import { NextFunction, Request, Response } from "express";
+import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
 import { getTimestamp } from "../utils/getTimestamp";
-import dotenv from "dotenv";
-import AppError from "../utils/appError";
-import axios from "axios";
-import ngrok from "ngrok";
+
+interface MetaItem {
+  name: string;
+  Value: string | number;
+}
 
 dotenv.config();
 const USER_URL = process.env.USER_URL;
@@ -45,20 +49,20 @@ export const intiateSTKPush = catchAsync(
     const password = Buffer.from(
       Number(process.env.BUSINESS_SHORTCODE) + process.env.PASS_KEY! + timestamp
     ).toString("base64");
-    const callback_url = "https://1739-102-215-189-77.ngrok-free.app";
+    const callback_url = "https://7fdc-102-215-189-77.ngrok-free.app";
 
     const payload = {
-      "BusinessShortCode": Number(process.env.BUSINESS_SHORTCODE),
-      "Password": password,
-      "Timestamp": timestamp,
-      "TransactionType": "CustomerPayBillOnline",
-      "Amount": amount,
-      "PartyA": phone,
-      "PartyB": Number(process.env.BUSINESS_SHORTCODE),
-      "PhoneNumber": phone,
-      "CallBackURL": `https://1739-102-215-189-77.ngrok-free.app/api/v1/payments/stkPushCallback`,
-      "AccountReference": "Shoply",
-      "TransactionDesc": "Paid online",
+      BusinessShortCode: Number(process.env.BUSINESS_SHORTCODE),
+      Password: password,
+      Timestamp: timestamp,
+      TransactionType: "CustomerPayBillOnline",
+      Amount: amount,
+      PartyA: phone,
+      PartyB: Number(process.env.BUSINESS_SHORTCODE),
+      PhoneNumber: phone,
+      CallBackURL: `${callback_url}/api/v1/payments/stkPushCallback`,
+      AccountReference: "Shoply",
+      TransactionDesc: "Paid online",
     };
 
     const response = await axios.post(url, payload, {
@@ -74,56 +78,76 @@ export const intiateSTKPush = catchAsync(
 
 export const stkPushCallback = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    console.log("Callback received:", req.body.Body.stkCallback);
-    res.status(200).send("OK");
-    // const { orderId } = req.params;
-    // const {
-    //   MerchantRequestID,
-    //   CheckoutRequestID,
-    //   ResultCode,
-    //   ResultDesc,
-    //   CallbackMetdata,
-    // } = req.body.Body.stkCallback;
+    const {
+      MerchantRequestID,
+      CheckoutRequestID,
+      ResultCode,
+      ResultDesc,
+      CallbackMetdata,
+    } = req.body.Body.stkCallback;
 
-    // // Get the meta data from the meta
-    // const meta = Object.values(await CallbackMetdata.Item);
-    // const PhoneNumber = meta
-    //   .find((o) => o.name === "PhoneNumber")
-    //   .Value.toString();
-    // const Amount = meta.find((o) => o.Name === "Amount").Value.toString();
-    // const MpesaReceiptNumber = meta
-    //   .find((o) => o.Name === "MpesaReceiptNumber")
-    //   .Value.toString();
-    // const TransactionDate = meta
-    //   .find((o) => o.Name === "TransactionDate")
-    //   .Value.toString();
+    // Get the meta data from the meta
+    const meta: MetaItem[] = Object.values(await CallbackMetdata.Item);
+    const PhoneNumber = meta
+      .find((o) => o.name === "PhoneNumber")
+      ?.Value.toString();
+    const Amount = meta.find((o) => o.name === "Amount")?.Value.toString();
+    const MpesaReceiptNumber = meta
+      .find((o) => o.name === "MpesaReceiptNumber")
+      ?.Value.toString();
+    const TransactionDate = meta
+      .find((o) => o.name === "TransactionDate")
+      ?.Value.toString();
 
     // Do something with the data
-    // console.log("-".repeat(20), " OUTPUT IN THE CALLBACK ", "-".repeat(20));
-    // console.log(
-    //   `
-    //     orderId:${orderId},
-    //     MerchantRequestID : ${MerchantRequestID},
-    //     CheckoutRequestID: ${CheckoutRequestID},
-    //     ResultCode: ${ResultCode},
-    //     ResultDesc: ${ResultDesc},
-    //     PhoneNumber : ${PhoneNumber},
-    //     Amount: ${Amount},
-    //     MpesaReceiptNumber: ${MpesaReceiptNumber},
-    //     TransactionDate : ${TransactionDate}
-    //     `
-    // );
+    console.log("-".repeat(20), " OUTPUT IN THE CALLBACK ", "-".repeat(20));
+    const data = {
+      MerchantRequestID,
+      CheckoutRequestID,
+      ResultCode,
+      ResultDesc,
+      PhoneNumber,
+      Amount,
+      MpesaReceiptNumber,
+      TransactionDate,
+    };
+    console.log(data);
 
-    // let message = req.body.Body.stkCallback;
-    // console.log(message);
-
-    // return res.status(201).json({
-    //   status: "success",
-    //   data: message,
-    // });
+    return res.status(201).json({
+      status: "success",
+      data,
+    });
   }
 );
 
 export const confirmPayment = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {}
+  async (req: Request, res: Response, next: NextFunction) => {
+    const url = "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query";
+    const auth = "Bearer " + req.safaricomAccessToken;
+
+    const timestamp = getTimestamp();
+    console.log(process.env.PASS_KEY)
+    const password = Buffer.from(
+      Number(process.env.BUSINESS_SHORTCODE) + process.env.PASS_KEY! + timestamp
+    ).toString("base64");
+
+
+    const payload = {
+      BusinessShortCode: Number(process.env.BUSINESS_SHORTCODE),
+      Password: password,
+      Timestamp: timestamp,
+      CheckoutRequestID: req.params.CheckoutRequestID,
+    };
+
+    const response = await axios.post(url, payload, {
+      headers: {
+        Authorization: auth,
+      },
+    });
+
+    return res.status(201).json({
+      status: "success",
+      data: response,
+    });
+  }
 );

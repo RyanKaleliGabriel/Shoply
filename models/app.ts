@@ -14,3 +14,9 @@ export interface Token {
 export interface safaricomAccessToken {
   safaricomAccessToken: string;
 }
+
+
+export interface MetaItem {
+  name: string;
+  Value: string | number
+}
