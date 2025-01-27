@@ -100,7 +100,7 @@ export const getOrder = catchAsync(
 
     return res.status(200).json({
       status: "success",
-      data: { products: ordersWithProducts, total_amount: order.total_amount },
+      data: { id:order.id, products: ordersWithProducts, total_amount: order.total_amount },
     });
   }
 );
@@ -150,7 +150,11 @@ export const createOrder = catchAsync(
     await client.query("COMMIT");
     return res.status(201).json({
       status: "success",
-      data: { products: result.rows, total_amount: order.total_amount },
+      data: {
+        order_id: order.id,
+        products: result.rows,
+        total_amount: order.total_amount,
+      },
     });
 
     // Initiate Payment Process -
