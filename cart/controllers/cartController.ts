@@ -172,3 +172,14 @@ export const removeItem = catchAsync(
     });
   }
 );
+
+export const clearCart = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.params.userid;
+    await pool.query("DELETE from carts WHERE user_id=$1", [userId]);
+    return res.status(204).json({
+      status: "success",
+      data: null,
+    });
+  }
+);

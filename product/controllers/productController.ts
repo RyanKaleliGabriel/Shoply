@@ -86,16 +86,24 @@ export const deleteProduct = catchAsync(
 
 export const updateProduct = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { name, categoryId, price, description } = req.body;
+    const updates = req.body;
+    const { id } = req.params;
 
-    stringValidator(name, "Name", next);
-    stringValidator(description, "Description", next);
-    numberValidator(price, "Price", next);
-    numberValidator(categoryId, "Category", next);
+    if (Object.keys(updates).length === 0) {
+      return next(new AppError("No fields to update", 400));
+    }
+
+    // Dynamically build the SET clause
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(", ");
+
+    const values = Object.values(updates);
+    values.push(id);
 
     const categoryResult = await pool.query(
       "SELECT * FROM categories WHERE id=$1",
-      [categoryId]
+      [updates.categoryId]
     );
 
     const category = categoryResult.rows[0];
@@ -105,8 +113,8 @@ export const updateProduct = catchAsync(
 
     // Create a product with the category.
     const result = await pool.query(
-      "UPDATE products set name=$1, category_id=$2, price=$3, description=$4 WHERE id=$5 RETURNING *",
-      [name, category.id, price, description, req.params.id]
+      `UPDATE products set  ${setClause} WHERE id = $${values.length} RETURNING *`,
+      values
     );
 
     const product = result.rows[0];
