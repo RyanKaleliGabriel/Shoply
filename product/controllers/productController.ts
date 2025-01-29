@@ -6,6 +6,33 @@ import validator from "validator";
 import { numberValidator, stringValidator } from "../utils/validators";
 import APIfeatures from "../utils/ApiFeatures";
 
+const USER_URL = process.env.USER_URL
+
+export const authenticated = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const token =
+      req.headers.cookie?.split("=").at(1) ||
+      req.headers.authorization?.split(" ").at(1);
+    const response = await fetch(`${USER_URL}/api/v1/users/getMe`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return next(new AppError("Failed to authenticate user. Try again.", 403));
+    }
+
+    const data = await response.json();
+    req.user = data.data;
+    req.token = token;
+    next();
+  }
+);
+
 export const getProducts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     // Implement pagination, filtering and sorting.
@@ -100,16 +127,6 @@ export const updateProduct = catchAsync(
 
     const values = Object.values(updates);
     values.push(id);
-
-    const categoryResult = await pool.query(
-      "SELECT * FROM categories WHERE id=$1",
-      [updates.categoryId]
-    );
-
-    const category = categoryResult.rows[0];
-    if (!category) {
-      return next(new AppError("No category matching that id", 404));
-    }
 
     // Create a product with the category.
     const result = await pool.query(

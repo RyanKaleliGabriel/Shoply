@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     status VARCHAR(100) NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -82,7 +83,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     status VARCHAR(20) NOT NULL,
     payment_method VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    provider_metadata JSONB NOT NULL,
+    provider_metadata JSONB,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );

@@ -40,11 +40,7 @@ export const getItems = catchAsync(
       req.user.id,
     ]);
     const items = result.rows;
-    const total_amount = items.reduce(
-      (accumulator, currentValue) =>
-        accumulator + currentValue.price * currentValue.quantity,
-      0
-    );
+
 
     // SELECT PRODUCTS THAT MATCH THE ONES IN THE CART
     const response = await fetch(`${PRODUCT_URL}/api/v1/products/`, {
@@ -74,7 +70,7 @@ export const getItems = catchAsync(
     return res.status(200).json({
       status: "success",
       result: mergedItems.length,
-      data: { items: mergedItems, total_amount },
+      data: { items: mergedItems },
     });
   }
 );
@@ -87,7 +83,7 @@ export const addItem = catchAsync(
 
     // AUthenticate the product using the productId
     const response = await fetch(
-      `${PRODUCT_URL}/api/v1/products/${productId}`,
+      `${PRODUCT_URL}/api/v1/products/${productId}?stock[gt]=0`,
       {
         method: "GET",
         headers: {
@@ -115,8 +111,6 @@ export const addItem = catchAsync(
       return next(new AppError("Product already exists in cart", 403));
     }
 
-    console.log(data.data);
-
     const result = await client.query(
       "INSERT INTO carts (product_id, user_id, quantity, price) VALUES ($1, $2, $3, $4) RETURNING *",
       [data.data.id, req.user.id, 1, data.data.price]
@@ -134,7 +128,16 @@ export const addItem = catchAsync(
 export const updateItem = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
+    const updates = req.body;
 
+    // Dynamically set the clause
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(", ");
+
+    // Set the values
+    const values = Object.values(updates);
+    values.push(id);
     const client = await pool.connect();
     await client.query("BEGIN");
 
@@ -147,8 +150,8 @@ export const updateItem = catchAsync(
     }
 
     const result = await client.query(
-      "UPDATE carts SET quantity=$1 WHERE id=$2 RETURNING *",
-      [req.body.quantity, item.id]
+      `UPDATE carts SET ${setClause} RETURNING *`,
+      values
     );
     const updatedItem = result.rows[0];
 
