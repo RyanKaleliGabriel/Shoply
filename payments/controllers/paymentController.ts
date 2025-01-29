@@ -5,9 +5,12 @@ import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
 import { getTimestamp } from "../utils/getTimestamp";
 import Stripe from "stripe";
+import pool from "../db/con";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const ORDER_URL = process.env.ORDER_URL;
+const CART_URL = process.env.CART_URL;
+const PRODUCT_URL = process.env.PRODUCT_URL;
 
 interface MetaItem {
   name: string;
@@ -41,6 +44,102 @@ export const authenticated = catchAsync(
     next();
   }
 );
+
+const afterPaymentOperations = async (
+  next: NextFunction,
+  orderId: any,
+  token: string,
+  userId: number
+) => {
+  // Update the order to paid.
+  const responseOrder = await fetch(`${ORDER_URL}/api/v1/orders/${orderId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "paid" }),
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!responseOrder.ok) {
+    return next(new AppError("Failed to complete payment. Try again", 500));
+  }
+
+  // Clear the cart.
+  const responseCart = await fetch(`${CART_URL}/api/v1/cart/${userId}`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!responseCart.ok) {
+    return next(new AppError("Failed to clear cart. Try again", 500));
+  }
+
+  // Update product quantity
+  const responseProducts = await fetch(
+    `${ORDER_URL}/api/v1/orders/${orderId}`,
+    {
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!responseProducts.ok) {
+    return next(new AppError("Failed to fetch products. Try again", 500));
+  }
+
+  const productsData = await responseProducts.json();
+  const products = productsData.data.products;
+
+  async function updateItems(products: any) {
+    const productDetails = await Promise.all(
+      products.map((product: any) =>
+        fetch(`${PRODUCT_URL}/api/v1/products/${product.product_id}`, {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }).then((res) => res.json())
+      )
+    );
+
+    //Prepare stock updates
+    const updatePromises = products.map((product: any, index: number) => {
+      console.log(product);
+      const productStock = productDetails[index].data.stock;
+      const stockUpdate = productStock - product.quantity;
+
+      return fetch(`${PRODUCT_URL}/api/v1/products/${product.product_id}`, {
+        method: "PATCH",
+        credentials: "include",
+        body: JSON.stringify({ stock: stockUpdate }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    });
+
+    const updateResponses = await Promise.all(updatePromises);
+
+    //Check if any update failed
+    const failedUpdates = updateResponses.filter((res) => !res.ok);
+    if (failedUpdates.length > 0) {
+      return next(new AppError("Some product stock updates failed", 500));
+    }
+  }
+
+  await updateItems(products);
+};
 
 export const intiateSTKPush = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -82,6 +181,14 @@ export const intiateSTKPush = catchAsync(
 
 export const stkPushCallback = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.body.Body.stkCallback) {
+      return new AppError("Mpesa payment failed. Try again", 500);
+    }
+
+    const orderId = req.params.orderId;
+    const token = req.token;
+    const userId = req.user.id;
+
     const {
       MerchantRequestID,
       CheckoutRequestID,
@@ -115,11 +222,29 @@ export const stkPushCallback = catchAsync(
       MpesaReceiptNumber,
       TransactionDate,
     };
-    console.log(data);
+
+    // Save transaction to database
+    const client = await pool.connect();
+    await client.query("BEGIN");
+
+    const resultTransaction = await client.query(
+      "INSERT INTO transactions (user_id, order_id, amount, currency, status, payment_method, provider_metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+      [
+        req.user.id,
+        req.params.orderId,
+        Amount,
+        "kes",
+        "completed",
+        "mpesa",
+        data,
+      ]
+    );
+    const transaction = resultTransaction.rows[0];
+    await client.query("COMMIT");
 
     return res.status(201).json({
       status: "success",
-      data,
+      data: transaction,
     });
   }
 );
@@ -180,11 +305,12 @@ export const checkoutStripe = catchAsync(
 
     const data = await responseOrder.json();
     const order = data.data;
+    console.log(order)
     const amount = Math.ceil(order.total_amount / 130);
 
     const params: Stripe.Checkout.SessionCreateParams = {
-      success_url: `http://127.0.0.1/api/v1/payments/success`,
-      cancel_url: "http://127.0.0.1/api/v1/payments/cancel",
+      success_url: `http://127.0.0.1/api/v1/payments/stripe/success/${orderId}`,
+      cancel_url: "http://127.0.0.1/api/v1/payments/stripe/cancel",
       customer_email: user.email,
       client_reference_id: order.id,
       mode: "payment",
@@ -202,9 +328,19 @@ export const checkoutStripe = catchAsync(
         },
       ],
     };
-
     const checkoutSession: Stripe.Checkout.Session =
       await stripe.checkout.sessions.create(params);
+
+    // save to db
+    const client = await pool.connect();
+    await client.query("BEGIN");
+
+    const resultTransaction = await client.query(
+      "INSERT INTO transactions (user_id, order_id, amount, currency, status, payment_method) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [user.id, orderId, amount, "usd", "completed", "stripe"]
+    );
+    const transaction = resultTransaction.rows[0];
+    await client.query("COMMIT");
 
     res.status(200).json({
       status: "success",
@@ -215,12 +351,10 @@ export const checkoutStripe = catchAsync(
 
 export const stripeSuccess = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    // save to db
-
-    // Update the order to paid
-
-    // Clear the cart
-
+    const orderId = req.params.orderId;
+    const token = req.token;
+    const userId = req.user.id;
+    await afterPaymentOperations(next, orderId, token, userId);
     res.status(200).json({
       status: "success",
       data: {
@@ -230,13 +364,53 @@ export const stripeSuccess = catchAsync(
   }
 );
 
-export const cancelPayment = catchAsync(
+export const stripeCancel = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({
       status: "success",
       data: {
         message: "Payment canceled by user.",
       },
+    });
+  }
+);
+
+export const getTransactions = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user.id;
+
+    const client = await pool.connect();
+    await client.query("BEGIN");
+    const results = await client.query(
+      "SELECT * FROM transactions WHERE user_id=$1",
+      [userId]
+    );
+    const transactions = results.rows;
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      status: "success",
+      data: transactions,
+    });
+  }
+);
+
+export const getTransaction = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params.id;
+
+    const client = await pool.connect();
+    await client.query("BEGIN");
+    const results = await client.query(
+      "SELECT * FROM transactions WHERE id=$1",
+      [id]
+    );
+    const transaction = results.rows[0];
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      status: "success",
+      data: transaction,
     });
   }
 );

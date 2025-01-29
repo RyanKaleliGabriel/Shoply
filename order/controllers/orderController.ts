@@ -100,7 +100,11 @@ export const getOrder = catchAsync(
 
     return res.status(200).json({
       status: "success",
-      data: { id:order.id, products: ordersWithProducts, total_amount: order.total_amount },
+      data: {
+        id: order.id,
+        products: ordersWithProducts,
+        total_amount: order.total_amount,
+      },
     });
   }
 );
@@ -125,9 +129,15 @@ export const createOrder = catchAsync(
       return next(new AppError("No items found in cart", 403));
     }
 
+    const total_amount = items.reduce(
+      (accumulator: number, currentValue: any) =>
+        accumulator + currentValue.price * currentValue.quantity,
+      0
+    );
+
     const resultOrder = await pool.query(
       "INSERT INTO orders (status, user_id, total_amount) VALUES($1, $2, $3) RETURNING *",
-      ["pending", req.user.id, data.data.total_amount]
+      ["pending", req.user.id, total_amount]
     );
     const order: any = resultOrder.rows[0];
 
@@ -153,13 +163,9 @@ export const createOrder = catchAsync(
       data: {
         order_id: order.id,
         products: result.rows,
-        total_amount: order.total_amount,
+        total_amount
       },
     });
-
-    // Initiate Payment Process -
-    // Verify Payment Status - If payment is successful, update the order to "paid" status. If payment fails, keep the order as "pending", allowing a retry.
-    // Clear the Cart (Only After Payment Success) After a successful payment, delete the cart items but keep the order record.
   }
 );
 
@@ -190,6 +196,21 @@ export const deleteOrder = catchAsync(
 export const updateOrder = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
+    const updates = req.body;
+
+    if (Object.keys(updates).length === 0) {
+      return next(new AppError("No fields to update", 400));
+    }
+
+    // Dynamically set the clause
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(", ");
+
+    // Set the values
+    const values = Object.values(updates);
+    values.push(id);
+
     const client = await pool.connect();
     await client.query("BEGIN");
 
@@ -202,8 +223,8 @@ export const updateOrder = catchAsync(
       return next(new AppError("No order matching that id", 404));
     }
     const result = await client.query(
-      "UPDATE orders SET status=$2 WHERE id=$1 RETURNING *",
-      [order.id, req.body.status]
+      `UPDATE orders SET ${setClause} WHERE id=$${values.length} RETURNING *`,
+      values
     );
 
     await client.query("COMMIT");

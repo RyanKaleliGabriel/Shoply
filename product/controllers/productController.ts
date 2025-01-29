@@ -6,6 +6,33 @@ import validator from "validator";
 import { numberValidator, stringValidator } from "../utils/validators";
 import APIfeatures from "../utils/ApiFeatures";
 
+const USER_URL = process.env.USER_URL
+
+export const authenticated = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const token =
+      req.headers.cookie?.split("=").at(1) ||
+      req.headers.authorization?.split(" ").at(1);
+    const response = await fetch(`${USER_URL}/api/v1/users/getMe`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return next(new AppError("Failed to authenticate user. Try again.", 403));
+    }
+
+    const data = await response.json();
+    req.user = data.data;
+    req.token = token;
+    next();
+  }
+);
+
 export const getProducts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     // Implement pagination, filtering and sorting.
@@ -86,27 +113,25 @@ export const deleteProduct = catchAsync(
 
 export const updateProduct = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { name, categoryId, price, description } = req.body;
+    const updates = req.body;
+    const { id } = req.params;
 
-    stringValidator(name, "Name", next);
-    stringValidator(description, "Description", next);
-    numberValidator(price, "Price", next);
-    numberValidator(categoryId, "Category", next);
-
-    const categoryResult = await pool.query(
-      "SELECT * FROM categories WHERE id=$1",
-      [categoryId]
-    );
-
-    const category = categoryResult.rows[0];
-    if (!category) {
-      return next(new AppError("No category matching that id", 404));
+    if (Object.keys(updates).length === 0) {
+      return next(new AppError("No fields to update", 400));
     }
+
+    // Dynamically build the SET clause
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(", ");
+
+    const values = Object.values(updates);
+    values.push(id);
 
     // Create a product with the category.
     const result = await pool.query(
-      "UPDATE products set name=$1, category_id=$2, price=$3, description=$4 WHERE id=$5 RETURNING *",
-      [name, category.id, price, description, req.params.id]
+      `UPDATE products set  ${setClause} WHERE id = $${values.length} RETURNING *`,
+      values
     );
 
     const product = result.rows[0];

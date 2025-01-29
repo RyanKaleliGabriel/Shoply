@@ -34,7 +34,7 @@ const createSendToken = (
   res.status(statusCode).json({
     status: "success",
     token,
-    data: user
+    data: user,
   });
 };
 
@@ -208,22 +208,38 @@ export const getMe = catchAsync(
 
     res.status(200).json({
       status: "success",
-      data: user
+      data: user,
     });
   }
 );
 
 export const updateMe = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.user.id;
+    const updates = req.body;
+
+    if (Object.keys(updates).length === 0) {
+      return next(new AppError("No fields to update", 400));
+    }
+
+    // Dynamically set the clause
+    const setClause = Object.keys(updates)
+      .map((key, index) => `${key} = $${index}`)
+      .join(", ");
+
+    // Set the values.
+    const values = Object.values(updates);
+    values.push(id);
+
     const result = await pool.query(
-      "UPDATE users SET username = $2 WHERE id=$1 RETURNING *",
-      [req.user.id, req.body.username]
+      `UPDATE users SET ${setClause} WHERE id=$1 RETURNING *`,
+      values
     );
 
     const user = result.rows[0];
     res.status(201).json({
       status: "success",
-      data: user
+      data: user,
     });
   }
 );
