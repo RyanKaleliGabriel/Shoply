@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import dotenv from "dotenv";
 
+
 import productRoute from "./routes/productRoute";
 
 import AppError from "./utils/appError";
@@ -17,6 +18,7 @@ if (process.env.NODE_ENV === "development") {
 }
 
 app.use("/api/v1/products", productRoute);
+
 
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
   return next(
