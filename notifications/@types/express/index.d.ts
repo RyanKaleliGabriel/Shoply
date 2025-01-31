@@ -1,4 +1,4 @@
-import User, { safaricomAccessToken, Token } from "../../../models/app";
+import  User, { safaricomAccessToken } from "../../../models/app";
 declare global {
   namespace Express {
     interface Request {

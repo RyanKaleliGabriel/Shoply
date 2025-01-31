@@ -18,6 +18,9 @@ WORKDIR /
 EXPOSE 5004
 
 COPY --from=builder /dist ./dist
+COPY --from=builder /views ./dist/views
+
+
 
 COPY package*.json ./
 RUN npm install

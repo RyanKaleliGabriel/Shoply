@@ -1,0 +1,38 @@
+extends baseEmail
+
+block content
+    tr
+        td.body-content
+            h1(style="margin: 0 0 20px 0; color: #2F3C4F;") Order Confirmation ##{orderNumber}
+            p(style="margin: 0 0 15px 0;") Hi #{firstName}, thank you for your purchase!
+            p(style="margin: 0 0 25px 0;") Your order from shoply is being processed. Here's your receipt:
+
+            table.product-table
+                thead
+                    tr
+                        th(style="width: 50%;") Item
+                        th(style="width: 20%;") Quantity
+                        th(style="width: 30%; text-align: right;") Price
+                tbody
+                    each item in orderItems
+                        tr
+                            td #{item.productName}
+                            td #{item.quantity}
+                            td(style="text-align: right;") $#{item.productPrice}
+                    tr.total-row
+                        td(colspan="2") Total:
+                        td(style="text-align: right;") $#{totalAmount}
+
+            //- h2(style="margin: 30px 0 15px 0; color: #2F3C4F;") Shipping Details
+            //- p(style="margin: 0 0 8px 0;") #{shippingAddress.name}
+            //- p(style="margin: 0 0 8px 0;") #{shippingAddress.street}
+            //- p(style="margin: 0 0 8px 0;") #{shippingAddress.city}, #{shippingAddress.state} #{shippingAddress.zip}
+            //- p(style="margin: 0 0 20px 0;") #{shippingAddress.country}
+
+            h2(style="margin: 30px 0 15px 0; color: #2F3C4F;") Payments 
+            p(style="margin: 0 0 20px 0;") Method 💸: #{paymentMethod}
+            p(style="margin: 0 0 20px 0;") Status 🔋: #{paymentStatus}
+            p(style="margin: 0 0 20px 0;") Currency 💱: #{paymentCurrency}
+
+
+            p(style="margin: 20px 0 0 0; color: #666666;") Need help? Reply to this email or contact our support team.
