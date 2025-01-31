@@ -11,6 +11,7 @@ import {
   updateCategory,
   updateProduct,
   authenticated,
+  restrictTo,
 } from "../controllers/productController";
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.get("/categories/all", getCategories);
 router.get("/categories/:id", getCategory);
 
 router.use(authenticated)
+router.use(restrictTo("'admin"))
 
 router.post("/", createProduct);
 router.post("/categories/create", createCategory);

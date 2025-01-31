@@ -6,7 +6,7 @@ import validator from "validator";
 import { numberValidator, stringValidator } from "../utils/validators";
 import APIfeatures from "../utils/ApiFeatures";
 
-const USER_URL = process.env.USER_URL
+const USER_URL = process.env.USER_URL;
 
 export const authenticated = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -32,6 +32,15 @@ export const authenticated = catchAsync(
     next();
   }
 );
+
+export const restrictTo = (role: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (role !== req.user.role) {
+      return next(new AppError("Request restricted to authorized users", 403));
+    }
+    next();
+  };
+};
 
 export const getProducts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
