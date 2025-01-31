@@ -16,28 +16,23 @@ block content
                 tbody
                     each item in orderItems
                         tr
-                            td #{item.name}
+                            td #{item.productName}
                             td #{item.quantity}
-                            td(style="text-align: right;") $#{item.price}
-                    tr.total-row
-                        td(colspan="2") Subtotal:
-                        td(style="text-align: right;") $#{subtotal}
-                    tr
-                        td(colspan="2") Shipping:
-                        td(style="text-align: right;") $#{shippingCost}
+                            td(style="text-align: right;") $#{item.productPrice}
                     tr.total-row
                         td(colspan="2") Total:
-                        td(style="text-align: right;") $#{total}
+                        td(style="text-align: right;") $#{totalAmount}
 
-            h2(style="margin: 30px 0 15px 0; color: #2F3C4F;") Shipping Details
-            p(style="margin: 0 0 8px 0;") #{shippingAddress.name}
-            p(style="margin: 0 0 8px 0;") #{shippingAddress.street}
-            p(style="margin: 0 0 8px 0;") #{shippingAddress.city}, #{shippingAddress.state} #{shippingAddress.zip}
-            p(style="margin: 0 0 20px 0;") #{shippingAddress.country}
+            //- h2(style="margin: 30px 0 15px 0; color: #2F3C4F;") Shipping Details
+            //- p(style="margin: 0 0 8px 0;") #{shippingAddress.name}
+            //- p(style="margin: 0 0 8px 0;") #{shippingAddress.street}
+            //- p(style="margin: 0 0 8px 0;") #{shippingAddress.city}, #{shippingAddress.state} #{shippingAddress.zip}
+            //- p(style="margin: 0 0 20px 0;") #{shippingAddress.country}
 
-            h2(style="margin: 30px 0 15px 0; color: #2F3C4F;") Payment Method
-            p(style="margin: 0 0 20px 0;") #{paymentMethod}
+            h2(style="margin: 30px 0 15px 0; color: #2F3C4F;") Payments 
+            p(style="margin: 0 0 20px 0;") Method 💸: #{paymentMethod}
+            p(style="margin: 0 0 20px 0;") Status 🔋: #{paymentStatus}
+            p(style="margin: 0 0 20px 0;") Currency 💱: #{paymentCurrency}
 
-            a.cta-button(href=`${orderTrackingUrl}`) Track Your Order
 
             p(style="margin: 20px 0 0 0; color: #666666;") Need help? Reply to this email or contact our support team.

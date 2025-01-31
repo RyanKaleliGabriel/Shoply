@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import cors from "cors";
+import path from "path"
 
 import globalErrorHandler from "./controllers/errorController";
 import notificationsRoute from "./routes/notificationsRoute";
@@ -9,6 +10,9 @@ import AppError from "./utils/appError";
 
 dotenv.config();
 const app = express();
+
+app.set('view engine', 'pug')
+app.set('views', path.join(__dirname, 'views'))
 
 app.use(express.json());
 
