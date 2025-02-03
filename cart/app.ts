@@ -2,6 +2,10 @@ import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import cors from "cors";
+import helmet from "helmet";
+import compression from "compression";
+import rateLimit from "express-rate-limit";
+import path from "path"
 
 import cartRoute from "./routes/cartRoute";
 import AppError from "./utils/appError";
@@ -10,23 +14,40 @@ import globalErrorHandler from "./controllers/errorController";
 dotenv.config();
 const app = express();
 
+app.set("view engine", "pug");
+app.set("views", path.join(__dirname, "views"));
+
+app.disable("x-powered-by")
+
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+
+app.use(compression())
+
 const corsOptions = {
   origin: "http://127.0.0.1",
   credentials: true,
 };
 app.use(cors(corsOptions));
 
-app.use(express.json());
+app.use(helmet({ contentSecurityPolicy: false }));
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-app.use("/api/v1/cart", cartRoute);
+const limtiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 100,
+  message: "Too many requests from this IP please try again in an hour",
+});
 
-app.all("*", (req: Request, res: Response, next: NextFunction) => {
+app.use(limtiter);
+
+app.use("/api/v1/cart", cartRoute);
+app.use("*", (req: Request, res: Response, next: NextFunction) => {
   return next(
-    new AppError(`Could not find ${req.originalUrl} in this server`, 401)
+    new AppError(`${req.originalUrl} does not exist on this server`, 404)
   );
 });
 

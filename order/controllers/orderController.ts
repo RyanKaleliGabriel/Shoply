@@ -21,8 +21,6 @@ export const authenticated = catchAsync(
       },
     });
 
-    console.log(response);
-
     if (!response.ok) {
       return next(new AppError("Failed to authenticate user. Try again.", 403));
     }
@@ -33,6 +31,16 @@ export const authenticated = catchAsync(
     next();
   }
 );
+
+export const restrictTo = (role: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (role !== req.user.role) {
+      return next(new AppError("Request restricted to authorized users", 403));
+    }
+    next();
+  };
+};
+
 
 export const getOrders = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -163,7 +171,7 @@ export const createOrder = catchAsync(
       data: {
         order_id: order.id,
         products: result.rows,
-        total_amount
+        total_amount,
       },
     });
   }

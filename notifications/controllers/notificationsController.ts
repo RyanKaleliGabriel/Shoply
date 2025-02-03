@@ -36,6 +36,16 @@ export const authenticated = catchAsync(
   }
 );
 
+export const restrictTo = (role: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (role !== req.user.role) {
+      return next(new AppError("Request restricted to authorized users", 403));
+    }
+    next();
+  };
+};
+
+
 export const createMessage = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const message = await client.messages.create({

@@ -21,8 +21,6 @@ export const authenticated = catchAsync(
       },
     });
 
-    console.log(response);
-
     if (!response.ok) {
       return next(new AppError("Failed to authenticate user. Try again.", 403));
     }
@@ -34,13 +32,21 @@ export const authenticated = catchAsync(
   }
 );
 
+export const restrictTo = (role: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (role !== req.user.role) {
+      return next(new AppError("Request restricted to authorized users", 403));
+    }
+    next();
+  };
+};
+
 export const getItems = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const result = await pool.query("SELECT * FROM carts WHERE user_id=$1", [
       req.user.id,
     ]);
     const items = result.rows;
-
 
     // SELECT PRODUCTS THAT MATCH THE ONES IN THE CART
     const response = await fetch(`${PRODUCT_URL}/api/v1/products/`, {

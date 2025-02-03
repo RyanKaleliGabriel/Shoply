@@ -11,6 +11,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const ORDER_URL = process.env.ORDER_URL;
 const CART_URL = process.env.CART_URL;
 const PRODUCT_URL = process.env.PRODUCT_URL;
+const NOTIFICATIONS_URL = process.env.NOTIFICATIONS_URL;
 
 interface MetaItem {
   name: string;
@@ -44,6 +45,16 @@ export const authenticated = catchAsync(
     next();
   }
 );
+
+export const restrictTo = (role: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (role !== req.user.role) {
+      return next(new AppError("Request restricted to authorized users", 403));
+    }
+    next();
+  };
+};
+
 
 const afterPaymentOperations = async (
   next: NextFunction,
@@ -114,7 +125,6 @@ const afterPaymentOperations = async (
 
     //Prepare stock updates
     const updatePromises = products.map((product: any, index: number) => {
-      console.log(product);
       const productStock = productDetails[index].data.stock;
       const stockUpdate = productStock - product.quantity;
 
@@ -139,6 +149,24 @@ const afterPaymentOperations = async (
   }
 
   await updateItems(products);
+  //Send Notifications
+
+  // Send notification
+  const responseNotification = await fetch(
+    `${NOTIFICATIONS_URL}/api/v1/sendReceipt/${orderId}`,
+    {
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const resultNotification = await responseNotification.json();
+  if (!responseNotification.ok) {
+    return next(new AppError("Failed to send notifications. Try again", 500));
+  }
 };
 
 export const intiateSTKPush = catchAsync(
@@ -210,8 +238,6 @@ export const stkPushCallback = catchAsync(
       .find((o) => o.name === "TransactionDate")
       ?.Value.toString();
 
-    // Do something with the data
-    console.log("-".repeat(20), " OUTPUT IN THE CALLBACK ", "-".repeat(20));
     const data = {
       MerchantRequestID,
       CheckoutRequestID,
@@ -255,7 +281,6 @@ export const confirmPayment = catchAsync(
     const auth = "Bearer " + req.safaricomAccessToken;
 
     const timestamp = getTimestamp();
-    console.log(process.env.PASS_KEY);
     const password = Buffer.from(
       Number(process.env.BUSINESS_SHORTCODE) + process.env.PASS_KEY! + timestamp
     ).toString("base64");
@@ -305,7 +330,6 @@ export const checkoutStripe = catchAsync(
 
     const data = await responseOrder.json();
     const order = data.data;
-    console.log(order)
     const amount = Math.ceil(order.total_amount / 130);
 
     const params: Stripe.Checkout.SessionCreateParams = {

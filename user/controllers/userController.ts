@@ -113,13 +113,11 @@ export const signup = catchAsync(
       return next(new AppError("Please provide a valid email", 400));
     }
     const hashedPassword = await hashPassword(password);
-    console.log(hashPassword);
     const result = await pool.query(
       "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
       [username, email, hashedPassword]
     );
     const user = result.rows[0];
-    console.log(user);
     createSendToken(user, 201, res, req);
   }
 );
@@ -165,7 +163,6 @@ export const updatePassword = catchAsync(
       req.user.id,
     ]);
     const user = result.rows[0];
-    console.log(user);
 
     // Validate the current password
     if (!(await correctPassword(req.body.passwordCurrent, user.password))) {
@@ -246,7 +243,6 @@ export const updateMe = catchAsync(
 
 export const deleteMe = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    console.log(req.user.id);
     const result = await pool.query("DELETE FROM users WHERE id=$1", [
       req.user.id,
     ]);
