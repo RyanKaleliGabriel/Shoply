@@ -44,6 +44,7 @@ export const restrictTo = (role: string) => {
 
 export const getProducts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    
     // Implement pagination, filtering and sorting.
     const baseQuery = "SELECT * FROM products";
     const features = new APIfeatures(baseQuery, req.query);
