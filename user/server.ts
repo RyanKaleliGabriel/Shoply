@@ -20,8 +20,7 @@ const port = parseInt(process.env.POSTGRES_PORT || "5432");
 const database = process.env.POSTGRES_DB;
 
 // Consul
-const serviceName = "user_service";
-const serviceId = `${serviceName}-${Math.floor(Math.random() * 1000)}`;
+const serviceId = `${SERVICE}-${Math.floor(Math.random() * 1000)}`;
 
 const client = new Client({
   host,
@@ -44,8 +43,8 @@ const registerService = async () => {
   try {
     await consul.agent.service.register({
       id: serviceId,
-      name: serviceName,
-      address: serviceName,
+      name:   SERVICE as string,
+      address: SERVICE as string,
       port: Number(PORT_USER),
     });
     console.log("Service registered with Consul");
