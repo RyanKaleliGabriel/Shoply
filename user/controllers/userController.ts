@@ -102,15 +102,7 @@ export const signup = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { username, email, password } = req.body;
     const role = req.body.role ?? "user";
-    if (
-      !username ||
-      typeof username !== "string" ||
-      validator.isEmpty(username.trim())
-    ) {
-      return next(new AppError("Username must be a non-empty string", 400));
-    }
-
-    if (!email || typeof email !== "string" || !validator.isEmail(email)) {
+    if (!validator.isEmail(email)) {
       return next(new AppError("Please provide a valid email", 400));
     }
     const hashedPassword = await hashPassword(password);

@@ -1,10 +1,14 @@
 import { NextFunction, Request, Response } from "express";
-import catchAsync from "../utils/catchAsync";
 import pool from "../db/con";
-import AppError from "../utils/appError";
-import validator from "validator";
-import { numberValidator, stringValidator } from "../utils/validators";
 import APIfeatures from "../utils/ApiFeatures";
+import AppError from "../utils/appError";
+import catchAsync from "../utils/catchAsync";
+import {
+  checkRequiredFields,
+  checkUpdateFields,
+  dynamicQuery,
+  updateClause,
+} from "../utils/databaseFields";
 
 export const getProducts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -42,30 +46,40 @@ export const getProduct = catchAsync(
 
 export const createProduct = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { name, categoryId, price, description, stock } = req.body;
+    const requiredFields = [
+      "name",
+      "category_id",
+      "price",
+      "description",
+      "stock",
+    ];
+    const productData = req.body;
 
-    // stringValidator(name, "Name", next);
-    // stringValidator(description, "Description", next);
-    // numberValidator(price, "Price", next);
-    // numberValidator(categoryId, "Category", next);
-    // numberValidator(stock, "Stock", next);
+    // Validators
+    checkRequiredFields(requiredFields, productData, next);
 
+    //Check if category exists
     const categoryResult = await pool.query(
       "SELECT * FROM categories WHERE id=$1",
-      [categoryId]
+      [productData.category_id]
     );
     const category = categoryResult.rows[0];
     if (!category) {
       return next(new AppError("No category matching that id", 404));
     }
 
+    //Dynamically build the query
+    const { keys, values, placeholders } = dynamicQuery(productData);
+
     // Create a product with the category.
     const result = await pool.query(
-      "INSERT INTO products (name, category_id, price, description, stock) VALUES($1, $2, $3, $4, $5) RETURNING *",
-      [name, category.id, price, description, stock]
+      `INSERT INTO products (${keys.join(
+        ", "
+      )}) VALUES (${placeholders}) RETURNING *`,
+      values
     );
-
     const product = result.rows[0];
+
     return res.status(201).json({
       status: "success",
       data: product,
@@ -89,17 +103,8 @@ export const updateProduct = catchAsync(
     const updates = req.body;
     const { id } = req.params;
 
-    if (Object.keys(updates).length === 0) {
-      return next(new AppError("No fields to update", 400));
-    }
-
-    // Dynamically build the SET clause
-    const setClause = Object.keys(updates)
-      .map((key, index) => `${key} = $${index + 1}`)
-      .join(", ");
-
-    const values = Object.values(updates);
-    values.push(id);
+    checkUpdateFields(updates, next);
+    const { setClause, values } = updateClause(updates, id, next);
 
     // Create a product with the category.
     const result = await pool.query(
@@ -151,15 +156,20 @@ export const getCategory = catchAsync(
 
 export const createCategory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const name = req.body.name;
+    const requiredFields = ["name"];
+    const categoryData = req.body;
 
-    if (!name || typeof name !== "string" || validator.isEmpty(name.trim())) {
-      return next(new AppError("Incorrect name format", 400));
-    }
+    //Validate required fields
+    checkRequiredFields(requiredFields, categoryData, next);
+
+    //Dynamically build the
+    const { keys, values, placeholders } = dynamicQuery(categoryData);
 
     const result = await pool.query(
-      "INSERT INTO categories (name) VALUES ($1) RETURNING *",
-      [name]
+      `INSERT INTO categories (${keys.join(
+        ", "
+      )}) VALUES (${placeholders}) RETURNING *`,
+      values
     );
     const newCategory = result.rows[0];
 
@@ -173,21 +183,20 @@ export const createCategory = catchAsync(
 export const updateCategory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
-    const name = req.body.name;
+    const updates = req.body;
 
-    if (!name || typeof name !== "string" || validator.isEmpty(name.trim())) {
-      return next(new AppError("Incorrect name format", 400));
-    }
+    checkUpdateFields(updates, next);
+    const { setClause, values } = updateClause(updates, id, next);
 
     const result = await pool.query(
-      "UPDATE categories set name=$2 WHERE id=$1 RETURNING *",
-      [id, name]
+      `UPDATE categories set ${setClause} WHERE id=$${values.length} RETURNING *`,
+      values
     );
     const updatedCategory = result.rows[0];
 
     return res.status(201).json({
       status: "success",
-      data: updateCategory,
+      data: updatedCategory,
     });
   }
 );
