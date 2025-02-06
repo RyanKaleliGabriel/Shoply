@@ -20,6 +20,7 @@
   "homepage": "https://github.com/RyanKaleliGabriel/Shoply#readme",
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/compression": "^1.7.5",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
@@ -30,11 +31,16 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
+    "compression": "^1.7.5",
+    "consul": "^2.0.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.7",

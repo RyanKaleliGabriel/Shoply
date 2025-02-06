@@ -35,9 +35,6 @@ class Email {
   }
 
   async send(template: any, subject: string) {
-    console.log(__dirname);
-    console.log(this.transaction)
-
     const templatePath = path.resolve(
       __dirname,
       "..",
@@ -46,7 +43,6 @@ class Email {
       `${template}.pug`
     );
 
-    console.log("Resolved Template Path:", templatePath);
     const html = pug.renderFile(templatePath, {
       firstName: this.firstName,
       orderNumber: this.order.id,

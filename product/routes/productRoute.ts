@@ -10,8 +10,9 @@ import {
   getProduct,
   updateCategory,
   updateProduct,
-  authenticated,
+
 } from "../controllers/productController";
+import { authenticated, restrictTo } from "../middleware/productMiddleware";
 
 const router = express.Router();
 
@@ -20,7 +21,8 @@ router.get("/:id", getProduct);
 router.get("/categories/all", getCategories);
 router.get("/categories/:id", getCategory);
 
-router.use(authenticated)
+router.use(authenticated);
+router.use(restrictTo("admin"));
 
 router.post("/", createProduct);
 router.post("/categories/create", createCategory);

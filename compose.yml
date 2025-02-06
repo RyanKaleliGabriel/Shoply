@@ -48,9 +48,11 @@ services:
       CART_URL: ${CART_URL}
       NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
       PAYMENT_URL: ${PAYMENT_URL}
-
     depends_on:
       - db
+      - consul
+    # deploy:
+    #   replicas: 2
 
   payment:
     build: ./payments
@@ -81,6 +83,9 @@ services:
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
     depends_on:
       - db
+      - consul
+    # deploy:
+    #   replicas: 2
 
   product:
     build: ./product
@@ -105,6 +110,9 @@ services:
       PAYMENT_URL: ${PAYMENT_URL}
     depends_on:
       - db
+      - consul
+    # deploy:
+    #   replicas: 2
 
   order:
     build: ./order
@@ -127,9 +135,11 @@ services:
       CART_URL: ${CART_URL}
       NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
       PAYMENT_URL: ${PAYMENT_URL}
-
     depends_on:
       - db
+      - consul
+    # deploy:
+    #   replicas: 2
 
   notifications:
     build: ./notifications
@@ -156,8 +166,16 @@ services:
       PAYMENT_URL: ${PAYMENT_URL}
       TWILLO_ACCOUNT_SID: ${TWILLO_ACCOUNT_SID}
       TWILLO_AUTH_TOKEN: ${TWILLO_AUTH_TOKEN}
+      EMAIL_FROM: ${EMAIL_FROM}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_USERNAME: ${EMAIL_USERNAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_HOST: ${EMAIL_HOST}
     depends_on:
       - db
+      - consul
+    # deploy:
+    #   replicas: 2
 
   cart:
     build: ./cart
@@ -182,6 +200,9 @@ services:
       PAYMENT_URL: ${PAYMENT_URL}
     depends_on:
       - db
+      - consul
+    # deploy:
+    #   replicas: 2
 
   nginx:
     image: nginx:latest
@@ -196,6 +217,19 @@ services:
       - cart
       - order
       - notifications
+
+  consul:
+    image: hashicorp/consul:1.15.4
+    container_name: consul
+    ports:
+      - "8500:8500"
+    command: "agent -dev -client=0.0.0.0"
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
 
 volumes:
   postgres_data:

@@ -101,25 +101,16 @@ export const restrictTo = (role: string) => {
 export const signup = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { username, email, password } = req.body;
-    if (
-      !username ||
-      typeof username !== "string" ||
-      validator.isEmpty(username.trim())
-    ) {
-      return next(new AppError("Username must be a non-empty string", 400));
-    }
-
-    if (!email || typeof email !== "string" || !validator.isEmail(email)) {
+    const role = req.body.role ?? "user";
+    if (!validator.isEmail(email)) {
       return next(new AppError("Please provide a valid email", 400));
     }
     const hashedPassword = await hashPassword(password);
-    console.log(hashPassword);
     const result = await pool.query(
-      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
-      [username, email, hashedPassword]
+      "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *",
+      [username, email, hashedPassword, role]
     );
     const user = result.rows[0];
-    console.log(user);
     createSendToken(user, 201, res, req);
   }
 );
@@ -165,7 +156,6 @@ export const updatePassword = catchAsync(
       req.user.id,
     ]);
     const user = result.rows[0];
-    console.log(user);
 
     // Validate the current password
     if (!(await correctPassword(req.body.passwordCurrent, user.password))) {
@@ -246,7 +236,6 @@ export const updateMe = catchAsync(
 
 export const deleteMe = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    console.log(req.user.id);
     const result = await pool.query("DELETE FROM users WHERE id=$1", [
       req.user.id,
     ]);
