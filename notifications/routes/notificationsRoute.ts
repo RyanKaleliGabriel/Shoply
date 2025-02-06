@@ -1,9 +1,10 @@
 import express from "express";
 import {
-  authenticated,
+
   createMessage,
   sendReceipt,
 } from "../controllers/notificationsController";
+import { authenticated } from "../middleware/notificationsMiddleware";
 
 const router = express.Router();
 

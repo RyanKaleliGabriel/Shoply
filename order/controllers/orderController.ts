@@ -1,45 +1,11 @@
 import { NextFunction, Request, Response } from "express";
-import catchAsync from "../utils/catchAsync";
 import pool from "../db/con";
 import AppError from "../utils/appError";
+import catchAsync from "../utils/catchAsync";
 
 const USER_URL = process.env.USER_URL;
 const PRODUCT_URL = process.env.PRODUCT_URL;
 const CART_URL = process.env.CART_URL;
-
-export const authenticated = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const token =
-      req.headers.cookie?.split("=").at(1) ||
-      req.headers.authorization?.split(" ").at(1);
-    const response = await fetch(`${USER_URL}/api/v1/users/getMe`, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      return next(new AppError("Failed to authenticate user. Try again.", 403));
-    }
-
-    const data = await response.json();
-    req.user = data.data;
-    req.token = token;
-    next();
-  }
-);
-
-export const restrictTo = (role: string) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (role !== req.user.role) {
-      return next(new AppError("Request restricted to authorized users", 403));
-    }
-    next();
-  };
-};
 
 
 export const getOrders = catchAsync(

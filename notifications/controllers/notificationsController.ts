@@ -4,46 +4,12 @@ import AppError from "../utils/appError";
 import twilio from "twilio";
 import Email from "../utils/email";
 
-const USER_URL = process.env.USER_URL;
 const ORDER_URL = process.env.ORDER_URL;
 const PAYMENT_URL = process.env.PAYMENT_URL;
 const accountSid = process.env.TWILLO_ACCOUNT_SID;
 const authToken = process.env.TWILLO_AUTH_TOKEN;
 const client = twilio(accountSid, authToken);
 
-export const authenticated = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const token =
-      req.headers.cookie?.split("=").at(1) ||
-      req.headers.authorization?.split(" ").at(1);
-    const response = await fetch(`${USER_URL}/api/v1/users/getMe`, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      return next(new AppError("Failed to authenticate user. Try again.", 403));
-    }
-
-    const data = await response.json();
-    req.user = data.data;
-    req.token = token;
-    next();
-  }
-);
-
-export const restrictTo = (role: string) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (role !== req.user.role) {
-      return next(new AppError("Request restricted to authorized users", 403));
-    }
-    next();
-  };
-};
 
 
 export const createMessage = catchAsync(

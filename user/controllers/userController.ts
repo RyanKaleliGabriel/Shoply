@@ -101,6 +101,7 @@ export const restrictTo = (role: string) => {
 export const signup = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { username, email, password } = req.body;
+    const role = req.body.role ?? "user";
     if (
       !username ||
       typeof username !== "string" ||
@@ -114,8 +115,8 @@ export const signup = catchAsync(
     }
     const hashedPassword = await hashPassword(password);
     const result = await pool.query(
-      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
-      [username, email, hashedPassword]
+      "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *",
+      [username, email, hashedPassword, role]
     );
     const user = result.rows[0];
     createSendToken(user, 201, res, req);

@@ -6,45 +6,8 @@ import validator from "validator";
 import { numberValidator, stringValidator } from "../utils/validators";
 import APIfeatures from "../utils/ApiFeatures";
 
-const USER_URL = process.env.USER_URL;
-
-export const authenticated = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const token =
-      req.headers.cookie?.split("=").at(1) ||
-      req.headers.authorization?.split(" ").at(1);
-    const response = await fetch(`${USER_URL}/api/v1/users/getMe`, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      return next(new AppError("Failed to authenticate user. Try again.", 403));
-    }
-
-    const data = await response.json();
-    req.user = data.data;
-    req.token = token;
-    next();
-  }
-);
-
-export const restrictTo = (role: string) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (role !== req.user.role) {
-      return next(new AppError("Request restricted to authorized users", 403));
-    }
-    next();
-  };
-};
-
 export const getProducts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    
     // Implement pagination, filtering and sorting.
     const baseQuery = "SELECT * FROM products";
     const features = new APIfeatures(baseQuery, req.query);
@@ -81,11 +44,11 @@ export const createProduct = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { name, categoryId, price, description, stock } = req.body;
 
-    stringValidator(name, "Name", next);
-    stringValidator(description, "Description", next);
-    numberValidator(price, "Price", next);
-    numberValidator(categoryId, "Category", next);
-    numberValidator(stock, "Stock", next);
+    // stringValidator(name, "Name", next);
+    // stringValidator(description, "Description", next);
+    // numberValidator(price, "Price", next);
+    // numberValidator(categoryId, "Category", next);
+    // numberValidator(stock, "Stock", next);
 
     const categoryResult = await pool.query(
       "SELECT * FROM categories WHERE id=$1",
@@ -233,8 +196,6 @@ export const deleteCategory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
     const result = await pool.query("DELETE FROM categories WHERE id=$1", [id]);
-    const category = result.rows[0];
-
     return res.status(204).json({
       status: "success",
       data: null,
