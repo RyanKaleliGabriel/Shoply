@@ -162,7 +162,7 @@ export const createCategory = catchAsync(
     //Validate required fields
     checkRequiredFields(requiredFields, categoryData, next);
 
-    //Dynamically build the
+    //Dynamically build the query
     const { keys, values, placeholders } = dynamicQuery(categoryData);
 
     const result = await pool.query(

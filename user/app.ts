@@ -6,7 +6,7 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
-import path from "path"
+import path from "path";
 
 // Routes
 import userRoute from "./routes/userRoute";
@@ -16,15 +16,16 @@ import globalErrorHandler from "./controllers/errorController";
 dotenv.config();
 const app = express();
 
+app.use(cookieParser());
 app.set("view engine", "pug");
 app.set("views", path.join(__dirname, "views"));
 
-app.disable("x-powered-by")
+app.disable("x-powered-by");
 
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
-app.use(compression())
+app.use(compression());
 
 const corsOptions = {
   origin: "http://127.0.0.1",

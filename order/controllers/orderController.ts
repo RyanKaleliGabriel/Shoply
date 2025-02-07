@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import pool from "../db/con";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
+import { checkUpdateFields, updateClause } from "../utils/databaseFields";
 
 const USER_URL = process.env.USER_URL;
 const PRODUCT_URL = process.env.PRODUCT_URL;
@@ -172,18 +173,8 @@ export const updateOrder = catchAsync(
     const id = req.params.id;
     const updates = req.body;
 
-    if (Object.keys(updates).length === 0) {
-      return next(new AppError("No fields to update", 400));
-    }
-
-    // Dynamically set the clause
-    const setClause = Object.keys(updates)
-      .map((key, index) => `${key} = $${index + 1}`)
-      .join(", ");
-
-    // Set the values
-    const values = Object.values(updates);
-    values.push(id);
+    checkUpdateFields(updates, next);
+    const { setClause, values } = updateClause(updates, id, next);
 
     const client = await pool.connect();
     await client.query("BEGIN");

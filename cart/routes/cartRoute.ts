@@ -1,13 +1,13 @@
 import express from "express";
 import {
   addItem,
-  authenticated,
+
   clearCart,
   getItems,
   removeItem,
   updateItem,
 } from "../controllers/cartController";
-import { restrictTo } from "../middleware/cartMiddleware";
+import { authenticated, restrictTo } from "../middleware/cartMiddleware";
 
 const router = express.Router();
 

@@ -2,36 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import catchAsync from "../utils/catchAsync";
 import pool from "../db/con";
 import AppError from "../utils/appError";
-import { numberValidator } from "../utils/validators";
+import { checkRequiredFields, checkUpdateFields, updateClause } from "../utils/databaseFields";
 
-const USER_URL = process.env.USER_URL;
 const PRODUCT_URL = process.env.PRODUCT_URL;
-
-export const authenticated = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const token =
-      req.headers.cookie?.split("=").at(1) ||
-      req.headers.authorization?.split(" ").at(1);
-    const response = await fetch(`${USER_URL}/api/v1/users/getMe`, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      return next(new AppError("Failed to authenticate user. Try again.", 403));
-    }
-
-    const data = await response.json();
-    req.user = data.data;
-    req.token = token;
-    next();
-  }
-);
-
 
 
 export const getItems = catchAsync(
@@ -76,13 +49,13 @@ export const getItems = catchAsync(
 
 export const addItem = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    // Get the productId.
-    const { productId } = req.body;
-    numberValidator(productId, "Product", next);
+    const requiredFields = ["product_id"]
+    const cartData = req.body;
+    checkRequiredFields(requiredFields, cartData, next)
 
-    // AUthenticate the product using the productId
+    // Authenticate the product using the productId
     const response = await fetch(
-      `${PRODUCT_URL}/api/v1/products/${productId}?stock[gt]=0`,
+      `${PRODUCT_URL}/api/v1/products/${cartData.product_id}?stock[gt]=0`,
       {
         method: "GET",
         headers: {
@@ -129,17 +102,11 @@ export const updateItem = catchAsync(
     const id = req.params.id;
     const updates = req.body;
 
-    // Dynamically set the clause
-    const setClause = Object.keys(updates)
-      .map((key, index) => `${key} = $${index + 1}`)
-      .join(", ");
+    checkUpdateFields(updates, next);
+    const { setClause, values } = updateClause(updates, id, next);
 
-    // Set the values
-    const values = Object.values(updates);
-    values.push(id);
     const client = await pool.connect();
     await client.query("BEGIN");
-
     const resultItem = await client.query("SELECT * FROM carts WHERE id=$1", [
       id,
     ]);
@@ -149,7 +116,7 @@ export const updateItem = catchAsync(
     }
 
     const result = await client.query(
-      `UPDATE carts SET ${setClause} RETURNING *`,
+      `UPDATE carts SET ${setClause} WHERE id=$${values.length} RETURNING *`,
       values
     );
     const updatedItem = result.rows[0];
