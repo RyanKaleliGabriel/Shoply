@@ -1,114 +1,29 @@
 import { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
+import validator from "validator";
 import pool from "../db/con";
+import { createSendToken } from "../middleware/userMiddleware";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
 import { correctPassword, hashPassword } from "../utils/userUtils";
-import validator from "validator";
-
-// Generate a signed JWT token with the user's id
-const signToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET!, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  });
-};
-
-const createSendToken = (
-  user: any,
-  statusCode: number,
-  res: Response,
-  req: Request
-) => {
-  const token = signToken(user.id);
-  user.password = undefined;
-
-  res.cookie("jwt", token, {
-    expires: new Date(
-      Date.now() +
-        Number(process.env.JWT_COOKIE_EXPIRES_IN) * 24 * 60 * 60 * 1000
-    ),
-    httpOnly: true,
-    secure: req.secure || req.header("X-forwaded-proto") === "https",
-  });
-
-  res.status(statusCode).json({
-    status: "success",
-    token,
-    data: user,
-  });
-};
-
-export const protect = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    let token;
-
-    // Get the jwt token in the headers or cookies.
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
-    } else if (req.cookies.jwt) {
-      token = req.cookies.jwt;
-    }
-
-    // return an error if there is no token
-    if (!token || token === "loggedOut") {
-      return next(
-        new AppError("You are not logged in! Please login to get access!", 401)
-      );
-    }
-
-    // Verify the token
-    const verifyToken = (token: string, secret: string) =>
-      new Promise((resolve, reject) => {
-        jwt.verify(token, secret, (err: any, decoded: any) => {
-          if (err) return reject(err);
-          resolve(decoded);
-        });
-      });
-
-    const decoded: any = await verifyToken(token, process.env.JWT_SECRET!);
-
-    // Check if the user still exists
-    const user = await pool.query("SELECT * FROM users WHERE id = $1", [
-      decoded.id,
-    ]);
-
-    if (user.rows.length === 0) {
-      return next(
-        new AppError("The user belonging to this token no longer exists", 401)
-      );
-    }
-    // Check if user changed password after token was issued
-
-    //Initialise req.user as the user (Protect the user)
-    req.user = user.rows[0];
-    next();
-  }
-);
-
-export const restrictTo = (role: string) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (role !== req.user.role) {
-      return next(new AppError("Request restricted to authorized users", 403));
-    }
-    next();
-  };
-};
+import { checkRequiredFields, checkUpdateFields, dynamicQuery, updateClause } from "../utils/databaseFields";
 
 // Create a new User.
 export const signup = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { username, email, password } = req.body;
+    const requiredFields = ["username", "email", "password"];
+    let userData = req.body;
     const role = req.body.role ?? "user";
-    if (!validator.isEmail(email)) {
+    userData = { ...userData, role };
+
+    // Validate required fields
+    checkRequiredFields(requiredFields, userData, next);
+    if (!validator.isEmail(userData.email)) {
       return next(new AppError("Please provide a valid email", 400));
     }
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPassword(userData.password);
     const result = await pool.query(
       "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *",
-      [username, email, hashedPassword, role]
+      [userData.username, userData.email, hashedPassword, role]
     );
     const user = result.rows[0];
     createSendToken(user, 201, res, req);
@@ -117,22 +32,19 @@ export const signup = catchAsync(
 
 export const login = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { email, password } = req.body;
-
-    // Check if the inputs are present
-    if (!email || !password) {
-      return next(new AppError("Provide email and password!", 400));
-    }
+    const requiredFields = ["email", "password"];
+    const loginData = req.body;
+    checkRequiredFields(requiredFields, loginData, next)
 
     // Query the user using the email input.
     const result = await pool.query(
       "SELECT * FROM users u WHERE u.email = $1",
-      [email]
+      [loginData.email]
     );
     const user = result.rows[0];
 
     // Check if the user exists and if password is correct
-    if (!user || !(await correctPassword(password, user.password))) {
+    if (!user || !(await correctPassword(loginData.password, user.password))) {
       return next(new AppError("Invalid email or password!", 401));
     }
 
@@ -173,6 +85,8 @@ export const updatePassword = catchAsync(
     }
     // // Update the password
     const hashedPassword = await hashPassword(req.body.password);
+
+    
     const passwordUpdateResult = await pool.query(
       "UPDATE users SET password = $1 WHERE id = $2 RETURNING *",
       [hashedPassword, user.id]
@@ -208,18 +122,8 @@ export const updateMe = catchAsync(
     const id = req.user.id;
     const updates = req.body;
 
-    if (Object.keys(updates).length === 0) {
-      return next(new AppError("No fields to update", 400));
-    }
-
-    // Dynamically set the clause
-    const setClause = Object.keys(updates)
-      .map((key, index) => `${key} = $${index}`)
-      .join(", ");
-
-    // Set the values.
-    const values = Object.values(updates);
-    values.push(id);
+    checkUpdateFields(updates, next);
+    const { setClause, values } = updateClause(updates, id, next);
 
     const result = await pool.query(
       `UPDATE users SET ${setClause} WHERE id=$1 RETURNING *`,

@@ -1,11 +1,8 @@
-import { Request, Response, NextFunction } from "express";
-import catchAsync from "../utils/catchAsync";
-import pool from "../db/con";
+import { NextFunction, Request, Response } from "express";
 import AppError from "../utils/appError";
-import { numberValidator } from "../utils/validators";
+import catchAsync from "../utils/catchAsync";
 
 const USER_URL = process.env.USER_URL;
-const PRODUCT_URL = process.env.PRODUCT_URL;
 
 export const authenticated = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {

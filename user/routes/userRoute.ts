@@ -5,12 +5,12 @@ import {
   googleRedirect,
   login,
   logout,
-  protect,
   signINGoogle,
   signup,
   updateMe,
   updatePassword
 } from "../controllers/userController";
+import { protect } from "../middleware/userMiddleware";
 
 const router = express.Router();
 
@@ -22,6 +22,7 @@ router.get("/google/callback", googleRedirect);
 
 
 router.use(protect);
+
 router.patch("/updatePassword", updatePassword);
 router.get("/getMe", getMe);
 router.patch("/updateMe", updateMe);
