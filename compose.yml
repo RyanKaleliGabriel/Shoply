@@ -1,13 +1,9 @@
 services:
   db:
     image: postgres
+    env_file:
+      - .env
     restart: always
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: db
     ports:
       - "5432:5432"
     volumes:
@@ -21,33 +17,11 @@ services:
 
   user:
     build: ./user
+    env_file:
+      - ./user/.env
     container_name: user_service
     ports:
       - "5000:5000"
-    environment:
-      NODE_OPTIONS: --max-old-space-size=2048
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: db
-      SERVICE_USER: ${SERVICE_USER}
-      PORT_USER: ${PORT_USER}
-      NODE_ENV: ${NODE_ENV}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_COOKIE_EXPIRES_IN: ${JWT_COOKIE_EXPIRES_IN}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GOOGLE_OAUTH_URL : ${GOOGLE_OAUTH_URL}
-      GOOGLE_ACCESS_TOKEN_URL: ${GOOGLE_ACCESS_TOKEN_URL}
-      GOOGLE_TOKEN_INFO_URL: ${GOOGLE_TOKEN_INFO_URL}
-      USER_URL: ${USER_URL}
-      PRODUCT_URL: ${PRODUCT_URL}
-      ORDER_URL: ${ORDER_URL}
-      CART_URL: ${CART_URL}
-      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
-      PAYMENT_URL: ${PAYMENT_URL}
     depends_on:
       - db
       - consul
@@ -56,31 +30,11 @@ services:
 
   payment:
     build: ./payments
+    env_file:
+      - ./payments/.env
     container_name: payment_service
     ports:
       - "5002:5002"
-    environment:
-      NODE_OPTIONS: --max-old-space-size=2048
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: db
-      SERVICE_PAYMENT: ${SERVICE_PAYMENT}
-      PORT_PAYMENT: ${PORT_PAYMENT}
-      NODE_ENV: ${NODE_ENV}
-      USER_URL: ${USER_URL}
-      PRODUCT_URL: ${PRODUCT_URL}
-      ORDER_URL: ${ORDER_URL}
-      CART_URL: ${CART_URL}
-      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
-      PAYMENT_URL: ${PAYMENT_URL}
-      SAFARICOM_CONSUMER_KEY: ${SAFARICOM_CONSUMER_KEY}
-      SAFARICOM_CONSUMER_SECRET: ${SAFARICOM_CONSUMER_SECRET}
-      BUSINESS_SHORTCODE: ${BUSINESS_SHORTCODE}
-      PASS_KEY: ${PASS_KEY}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
     depends_on:
       - db
       - consul
@@ -89,25 +43,11 @@ services:
 
   product:
     build: ./product
+    env_file:
+      - ./product/.env
     container_name: product_service
     ports:
       - "5001:5001"
-    environment:
-      NODE_OPTIONS: --max-old-space-size=2048
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: db
-      SERVICE_PRODUCT: ${SERVICE_PRODUCT}
-      PORT_PRODUCT: ${PORT_PRODUCT}
-      NODE_ENV: ${NODE_ENV}
-      USER_URL: ${USER_URL}
-      PRODUCT_URL: ${PRODUCT_URL}
-      ORDER_URL: ${ORDER_URL}
-      CART_URL: ${CART_URL}
-      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
-      PAYMENT_URL: ${PAYMENT_URL}
     depends_on:
       - db
       - consul
@@ -116,25 +56,11 @@ services:
 
   order:
     build: ./order
+    env_file:
+      - ./order/.env
     container_name: order_service
     ports:
       - "5003:5003"
-    environment:
-      NODE_OPTIONS: --max-old-space-size=4096
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: db
-      SERVICE_ORDER: ${SERVICE_ORDER}
-      PORT_ORDER: ${PORT_ORDER}
-      NODE_ENV: ${NODE_ENV}
-      USER_URL: ${USER_URL}
-      PRODUCT_URL: ${PRODUCT_URL}
-      ORDER_URL: ${ORDER_URL}
-      CART_URL: ${CART_URL}
-      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
-      PAYMENT_URL: ${PAYMENT_URL}
     depends_on:
       - db
       - consul
@@ -143,34 +69,11 @@ services:
 
   notifications:
     build: ./notifications
+    env_file:
+      - ./notifications/.env
     container_name: notifications_service
     ports:
       - "5004:5004"
-    environment:
-      NODE_OPTIONS: --max-old-space-size=2048
-      PORT_NOTIFICATION: ${PORT_NOTIFICATION}
-      SERVICE_NOTIFICATION: ${SERVICE_NOTIFICATION}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: db
-      SERVICE_PRODUCT: ${SERVICE_PRODUCT}
-      PORT_PRODUCT: ${PORT_PRODUCT}
-      NODE_ENV: ${NODE_ENV}
-      USER_URL: ${USER_URL}
-      PRODUCT_URL: ${PRODUCT_URL}
-      ORDER_URL: ${ORDER_URL}
-      CART_URL: ${CART_URL}
-      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
-      PAYMENT_URL: ${PAYMENT_URL}
-      TWILLO_ACCOUNT_SID: ${TWILLO_ACCOUNT_SID}
-      TWILLO_AUTH_TOKEN: ${TWILLO_AUTH_TOKEN}
-      EMAIL_FROM: ${EMAIL_FROM}
-      EMAIL_PORT: ${EMAIL_PORT}
-      EMAIL_USERNAME: ${EMAIL_USERNAME}
-      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
-      EMAIL_HOST: ${EMAIL_HOST}
     depends_on:
       - db
       - consul
@@ -179,25 +82,11 @@ services:
 
   cart:
     build: ./cart
+    env_file:
+      - ./cart/.env
     container_name: cart_service
     ports:
       - "5005:5005"
-    environment:
-      NODE_OPTIONS: --max-old-space-size=2048
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_HOST: db
-      SERVICE_CART: ${SERVICE_CART}
-      PORT_CART: ${PORT_CART}
-      NODE_ENV: ${NODE_ENV}
-      USER_URL: ${USER_URL}
-      PRODUCT_URL: ${PRODUCT_URL}
-      ORDER_URL: ${ORDER_URL}
-      CART_URL: ${CART_URL}
-      NOTIFICATIONS_URL: ${NOTIFICATIONS_URL}
-      PAYMENT_URL: ${PAYMENT_URL}
     depends_on:
       - db
       - consul
