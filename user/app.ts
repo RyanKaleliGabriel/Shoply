@@ -7,11 +7,15 @@ import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import path from "path";
+import client from "prom-client"
 
 // Routes
 import userRoute from "./routes/userRoute";
 import AppError from "./utils/appError";
 import globalErrorHandler from "./controllers/errorController";
+import { trackResponseSize } from "./middleware/prometheusMiddleware";
+
+
 
 dotenv.config();
 const app = express();
@@ -47,6 +51,7 @@ const limtiter = rateLimit({
 
 app.use(limtiter);
 
+app.use(trackResponseSize);
 app.use("/api/v1/users", userRoute);
 
 app.all("*", (req: Request, res: Response, next: NextFunction) => {

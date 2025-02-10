@@ -5,7 +5,16 @@ import { createSendToken } from "../middleware/userMiddleware";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
 import { correctPassword, hashPassword } from "../utils/userUtils";
-import { checkRequiredFields, checkUpdateFields, dynamicQuery, updateClause } from "../utils/databaseFields";
+import {
+  checkRequiredFields,
+  checkUpdateFields,
+  dynamicQuery,
+  updateClause,
+} from "../utils/databaseFields";
+import {
+  loginUsersGauge,
+  requestCounter,
+} from "../middleware/prometheusMiddleware";
 
 // Create a new User.
 export const signup = catchAsync(
@@ -34,7 +43,7 @@ export const login = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const requiredFields = ["email", "password"];
     const loginData = req.body;
-    checkRequiredFields(requiredFields, loginData, next)
+    checkRequiredFields(requiredFields, loginData, next);
 
     // Query the user using the email input.
     const result = await pool.query(
@@ -48,11 +57,13 @@ export const login = catchAsync(
       return next(new AppError("Invalid email or password!", 401));
     }
 
+    loginUsersGauge.inc();
     createSendToken(user, 200, res, req);
   }
 );
 
 export const logout = (req: Request, res: Response) => {
+  loginUsersGauge.dec();
   res.cookie("jwt", "loggedOut", {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
@@ -86,7 +97,6 @@ export const updatePassword = catchAsync(
     // // Update the password
     const hashedPassword = await hashPassword(req.body.password);
 
-    
     const passwordUpdateResult = await pool.query(
       "UPDATE users SET password = $1 WHERE id = $2 RETURNING *",
       [hashedPassword, user.id]
@@ -110,6 +120,7 @@ export const getMe = catchAsync(
       return next(new AppError("No user found with that id", 404));
     }
 
+    requestCounter.labels(req.method, req.originalUrl).inc();
     res.status(200).json({
       status: "success",
       data: user,
@@ -231,3 +242,4 @@ export const googleRedirect = catchAsync(
     createSendToken(user, 200, res, req);
   }
 );
+

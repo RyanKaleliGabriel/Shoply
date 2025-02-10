@@ -1,0 +1,11 @@
+groups:
+  - name: high_request_rate_alerts
+    rules:
+      - alert: HighRequestRate
+        expr: rate(http_requests_total[1m]) > 120
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High rate of HTTP requests"
+          description: "The rate of HTTP requests has exceeded 120 requests per minute over the last 1 minute."

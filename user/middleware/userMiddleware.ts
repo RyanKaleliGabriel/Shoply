@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import pool from "../db/con";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
+import { register, Counter, Gauge, Histogram, Summary } from "prom-client";
 
 // Generate a signed JWT token with the user's id
 const signToken = (id: string) => {
@@ -94,3 +95,5 @@ export const restrictTo = (role: string) => {
     next();
   };
 };
+
+
