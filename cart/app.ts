@@ -1,15 +1,17 @@
-import express, { Request, Response, NextFunction } from "express";
-import morgan from "morgan";
-import dotenv from "dotenv";
-import cors from "cors";
-import helmet from "helmet";
 import compression from "compression";
+import cors from "cors";
+import dotenv from "dotenv";
+import express, { NextFunction, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
-import path from "path"
+import helmet from "helmet";
+import morgan from "morgan";
+import path from "path";
 
-import cartRoute from "./routes/cartRoute";
-import AppError from "./utils/appError";
 import globalErrorHandler from "./controllers/errorController";
+import { trackResponseSize } from "./middleware/prometheusMiddleware";
+import cartRoute from "./routes/cartRoute";
+import metricsRoute from "./routes/metricsRoute"
+import AppError from "./utils/appError";
 
 dotenv.config();
 const app = express();
@@ -43,8 +45,10 @@ const limtiter = rateLimit({
 });
 
 app.use(limtiter);
-
+app.use(trackResponseSize);
+app.use("/metrics", metricsRoute)
 app.use("/api/v1/cart", cartRoute);
+
 app.use("*", (req: Request, res: Response, next: NextFunction) => {
   return next(
     new AppError(`${req.originalUrl} does not exist on this server`, 404)

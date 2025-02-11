@@ -13,7 +13,6 @@ export const metricsRegistry = catchAsync(
   }
 );
 
-
 // Prometheus metrics
 export const requestCounter = new Counter({
   name: "httP_request_total",
@@ -22,11 +21,6 @@ export const requestCounter = new Counter({
 });
 register.registerMetric(requestCounter)
 
-export const loginUsersGauge = new Gauge({
-  name: "logged_in_users",
-  help: "Number of currently logged in users",
-});
-register.registerMetric(loginUsersGauge)
 
 export const dbQueryDurationHistogram = new Histogram({
   name: "db_query_duration_seconds",

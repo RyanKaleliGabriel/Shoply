@@ -1,20 +1,21 @@
 import { NextFunction, Request, Response } from "express";
 import validator from "validator";
 import pool from "../db/con";
-import { createSendToken } from "../middleware/userMiddleware";
-import AppError from "../utils/appError";
-import catchAsync from "../utils/catchAsync";
-import { correctPassword, hashPassword } from "../utils/userUtils";
 import {
-  checkRequiredFields,
-  checkUpdateFields,
-  dynamicQuery,
-  updateClause,
-} from "../utils/databaseFields";
-import {
+  dbQueryDurationHistogram,
   loginUsersGauge,
   requestCounter,
 } from "../middleware/prometheusMiddleware";
+import { createSendToken } from "../middleware/userMiddleware";
+import AppError from "../utils/appError";
+import catchAsync from "../utils/catchAsync";
+import {
+  checkRequiredFields,
+  checkUpdateFields,
+  updateClause,
+} from "../utils/databaseFields";
+import { correctPassword, hashPassword } from "../utils/userUtils";
+import { performance } from "perf_hooks";
 
 // Create a new User.
 export const signup = catchAsync(
@@ -110,12 +111,17 @@ export const updatePassword = catchAsync(
 
 export const getMe = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    requestCounter.labels(req.method, req.originalUrl).inc()
+    const dbQueryStart = performance.now();
     const result = await pool.query("SELECT * FROM users WHERE id = $1", [
       req.user.id,
     ]);
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
 
     const user = result.rows[0];
-
     if (!user) {
       return next(new AppError("No user found with that id", 404));
     }
@@ -242,4 +248,3 @@ export const googleRedirect = catchAsync(
     createSendToken(user, 200, res, req);
   }
 );
-

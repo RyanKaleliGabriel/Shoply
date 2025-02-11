@@ -11,7 +11,6 @@ import {
   updatePassword,
 } from "../controllers/userController";
 import { protect } from "../middleware/userMiddleware";
-import { metricsRegistry } from "../middleware/prometheusMiddleware";
 
 const router = express.Router();
 
@@ -28,6 +27,6 @@ router.get("/getMe", getMe);
 router.patch("/updateMe", updateMe);
 router.delete("/deleteMe", deleteMe);
 
-router.get("/metrics", metricsRegistry);
+// router.get("/metrics", metricsRegistry);
 
 export default router;

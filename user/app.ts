@@ -1,21 +1,19 @@
-import express, { Response, Request, NextFunction } from "express";
-import morgan from "morgan";
-import dotenv from "dotenv";
+import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import helmet from "helmet";
-import compression from "compression";
+import dotenv from "dotenv";
+import express, { NextFunction, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import morgan from "morgan";
 import path from "path";
-import client from "prom-client"
 
 // Routes
-import userRoute from "./routes/userRoute";
-import AppError from "./utils/appError";
 import globalErrorHandler from "./controllers/errorController";
 import { trackResponseSize } from "./middleware/prometheusMiddleware";
-
-
+import userRoute from "./routes/userRoute";
+import metricsRoute from "./routes/metricsRoute";
+import AppError from "./utils/appError";
 
 dotenv.config();
 const app = express();
@@ -52,6 +50,7 @@ const limtiter = rateLimit({
 app.use(limtiter);
 
 app.use(trackResponseSize);
+app.use("/metrics", metricsRoute);
 app.use("/api/v1/users", userRoute);
 
 app.all("*", (req: Request, res: Response, next: NextFunction) => {

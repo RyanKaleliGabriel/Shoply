@@ -10,6 +10,8 @@ import path from "path"
 import globalErrorHandler from "./controllers/errorController";
 import orderRoute from "./routes/orderRoute";
 import AppError from "./utils/appError";
+import { trackResponseSize } from "./middleware/prometheusMiddleware";
+import metricsRoute from "./routes/metricsRoute"
 
 dotenv.config();
 const app = express();
@@ -43,6 +45,8 @@ const limtiter = rateLimit({
 });
 
 app.use(limtiter);
+app.use(trackResponseSize);
+app.use("/metrics", metricsRoute)
 app.use("/api/v1/orders", orderRoute);
 
 app.use("*", (req: Request, res: Response, next: NextFunction) => {
