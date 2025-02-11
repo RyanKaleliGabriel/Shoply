@@ -9,15 +9,28 @@ import {
   dynamicQuery,
   updateClause,
 } from "../utils/databaseFields";
+import { performance } from "perf_hooks";
+import {
+  dbQueryDurationHistogram,
+  requestCounter,
+} from "../middleware/prometheusMiddleware";
 
 export const getProducts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    const dbQueryStart = performance.now();
     // Implement pagination, filtering and sorting.
     const baseQuery = "SELECT * FROM products";
     const features = new APIfeatures(baseQuery, req.query);
     features.filter().sort().limitFields().paginate();
 
     const result = await pool.query(features.query, features.values);
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+
+    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",
@@ -30,6 +43,8 @@ export const getProducts = catchAsync(
 export const getProduct = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
+    const dbQueryStart = performance.now();
+
     const result = await pool.query("SELECT * FROM products WHERE id=$1", [id]);
     const product = result.rows[0];
 
@@ -37,6 +52,11 @@ export const getProduct = catchAsync(
       return next(new AppError("No product found with that id", 404));
     }
 
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(200).json({
       status: "success",
       data: product,
@@ -58,6 +78,7 @@ export const createProduct = catchAsync(
     // Validators
     checkRequiredFields(requiredFields, productData, next);
 
+    const dbQueryStart = performance.now();
     //Check if category exists
     const categoryResult = await pool.query(
       "SELECT * FROM categories WHERE id=$1",
@@ -79,6 +100,10 @@ export const createProduct = catchAsync(
       values
     );
     const product = result.rows[0];
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
 
     return res.status(201).json({
       status: "success",
@@ -91,6 +116,7 @@ export const deleteProduct = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
     await pool.query("DELETE FROM products WHERE id=$1", [id]);
+    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(204).json({
       status: "success",
       data: null,
@@ -123,9 +149,15 @@ export const updateProduct = catchAsync(
 // Categories
 export const getCategories = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    const dbQueryStart = performance.now();
     const result = await pool.query("SELECT * FROM categories");
     const categories = result.rows;
 
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(200).json({
       status: "success",
       results: categories.length,
@@ -138,6 +170,7 @@ export const getCategory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
 
+    const dbQueryStart = performance.now();
     const result = await pool.query("SELECT * FROM categories WHERE id=$1", [
       id,
     ]);
@@ -146,6 +179,12 @@ export const getCategory = catchAsync(
     if (!category) {
       return next(new AppError("No category matching that id", 404));
     }
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",
@@ -164,7 +203,7 @@ export const createCategory = catchAsync(
 
     //Dynamically build the query
     const { keys, values, placeholders } = dynamicQuery(categoryData);
-
+    const dbQueryStart = performance.now();
     const result = await pool.query(
       `INSERT INTO categories (${keys.join(
         ", "
@@ -172,6 +211,11 @@ export const createCategory = catchAsync(
       values
     );
     const newCategory = result.rows[0];
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
 
     return res.status(201).json({
       status: "success",
@@ -188,12 +232,17 @@ export const updateCategory = catchAsync(
     checkUpdateFields(updates, next);
     const { setClause, values } = updateClause(updates, id, next);
 
+    const dbQueryStart = performance.now();
     const result = await pool.query(
       `UPDATE categories set ${setClause} WHERE id=$${values.length} RETURNING *`,
       values
     );
     const updatedCategory = result.rows[0];
 
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
     return res.status(201).json({
       status: "success",
       data: updatedCategory,
@@ -205,6 +254,8 @@ export const deleteCategory = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
     const result = await pool.query("DELETE FROM categories WHERE id=$1", [id]);
+
+    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(204).json({
       status: "success",
       data: null,

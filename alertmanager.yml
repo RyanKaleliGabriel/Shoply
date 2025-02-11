@@ -1,0 +1,20 @@
+global:
+  resolve_timeout: 1m
+
+route:
+  group_by: ["alertname"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+  receiver: "gmail-notifications"
+
+receivers:
+- name: 'gmail-notifications'
+  email_configs:
+  - to: ryankalelidev@gmail.com
+    from: ryankalelidev@gmail.com
+    smarthost: smtp.gmail.com:587
+    auth_username: ryankalelidev@gmail.com
+    auth_identity: ryankalelidev@gmail.com
+    auth_password: <app_password>
+    send_resolved: true

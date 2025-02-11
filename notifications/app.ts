@@ -10,6 +10,8 @@ import rateLimit from "express-rate-limit";
 import globalErrorHandler from "./controllers/errorController";
 import notificationsRoute from "./routes/notificationsRoute";
 import AppError from "./utils/appError";
+import {trackResponseSize } from "./middleware/prometheusMiddleware";
+import metricsRoute from "./routes/metricsRoute"
 
 dotenv.config();
 const app = express();
@@ -43,7 +45,8 @@ const limtiter = rateLimit({
 });
 
 app.use(limtiter);
-
+app.use(trackResponseSize);
+app.use("/metrics", metricsRoute)
 app.use("/api/v1/notifications", notificationsRoute);
 app.use("*", (req: Request, res: Response, next: NextFunction) => {
   return next(

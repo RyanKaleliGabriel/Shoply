@@ -3,19 +3,29 @@ import pool from "../db/con";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
 import { checkUpdateFields, updateClause } from "../utils/databaseFields";
+import { performance } from "perf_hooks";
+import { dbQueryDurationHistogram, requestCounter } from "../middleware/prometheusMiddleware";
 
 const USER_URL = process.env.USER_URL;
 const PRODUCT_URL = process.env.PRODUCT_URL;
 const CART_URL = process.env.CART_URL;
 
-
 export const getOrders = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user.id;
+    const dbQueryStart = performance.now();
+
     const result = await pool.query("SELECT * FROM orders WHERE user_id=$1", [
       user,
     ]);
     const orders = result.rows;
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
+
     return res.status(200).json({
       status: "success",
       result: orders.length,
@@ -42,6 +52,8 @@ export const getOrder = catchAsync(
 
     const id = req.params.id;
     const client = await pool.connect();
+
+    const dbQueryStart = performance.now();
 
     await client.query("BEGIN");
 
@@ -72,6 +84,12 @@ export const getOrder = catchAsync(
       };
     });
     await client.query("COMMIT");
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",
@@ -110,6 +128,8 @@ export const createOrder = catchAsync(
       0
     );
 
+    const dbQueryStart = performance.now();
+
     const resultOrder = await pool.query(
       "INSERT INTO orders (status, user_id, total_amount) VALUES($1, $2, $3) RETURNING *",
       ["pending", req.user.id, total_amount]
@@ -133,6 +153,12 @@ export const createOrder = catchAsync(
     const query = `INSERT INTO product_order (product_id, quantity, order_id) VALUES ${placeholders} RETURNING *`;
     const result = await pool.query(query, values);
     await client.query("COMMIT");
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+
     return res.status(201).json({
       status: "success",
       data: {
@@ -161,6 +187,8 @@ export const deleteOrder = catchAsync(
     await client.query("DELETE FROM orders WHERE id=$1", [order.id]);
 
     await client.query("COMMIT");
+
+    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(204).json({
       status: "success",
       data: null,
@@ -177,8 +205,10 @@ export const updateOrder = catchAsync(
     const { setClause, values } = updateClause(updates, id, next);
 
     const client = await pool.connect();
-    await client.query("BEGIN");
 
+    const dbQueryStart = performance.now();
+
+    await client.query("BEGIN");
     const resultOrder = await client.query("SELECT * FROM orders WHERE id=$1", [
       id,
     ]);
@@ -193,6 +223,12 @@ export const updateOrder = catchAsync(
     );
 
     await client.query("COMMIT");
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+
     return res.status(201).json({
       status: "success",
       data: result.rows,
