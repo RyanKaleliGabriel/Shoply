@@ -2,13 +2,22 @@ import { Request, Response, NextFunction } from "express";
 import catchAsync from "../utils/catchAsync";
 import pool from "../db/con";
 import AppError from "../utils/appError";
-import { checkRequiredFields, checkUpdateFields, updateClause } from "../utils/databaseFields";
+import {
+  checkRequiredFields,
+  checkUpdateFields,
+  updateClause,
+} from "../utils/databaseFields";
+import { performance } from "perf_hooks";
+import {
+  dbQueryDurationHistogram,
+  requestCounter,
+} from "../middleware/prometheusMiddleware";
 
 const PRODUCT_URL = process.env.PRODUCT_URL;
 
-
 export const getItems = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    const dbQueryStart = performance.now();
     const result = await pool.query("SELECT * FROM carts WHERE user_id=$1", [
       req.user.id,
     ]);
@@ -39,6 +48,12 @@ export const getItems = catchAsync(
       };
     });
 
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
+
     return res.status(200).json({
       status: "success",
       result: mergedItems.length,
@@ -49,10 +64,11 @@ export const getItems = catchAsync(
 
 export const addItem = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const requiredFields = ["product_id"]
+    const requiredFields = ["product_id"];
     const cartData = req.body;
-    checkRequiredFields(requiredFields, cartData, next)
+    checkRequiredFields(requiredFields, cartData, next);
 
+    const dbQueryStart = performance.now();
     // Authenticate the product using the productId
     const response = await fetch(
       `${PRODUCT_URL}/api/v1/products/${cartData.product_id}?stock[gt]=0`,
@@ -90,6 +106,12 @@ export const addItem = catchAsync(
 
     await client.query("COMMIT");
     const item = result.rows[0];
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+
     return res.status(201).json({
       status: "success",
       data: item,
@@ -106,6 +128,7 @@ export const updateItem = catchAsync(
     const { setClause, values } = updateClause(updates, id, next);
 
     const client = await pool.connect();
+    const dbQueryStart = performance.now();
     await client.query("BEGIN");
     const resultItem = await client.query("SELECT * FROM carts WHERE id=$1", [
       id,
@@ -123,6 +146,11 @@ export const updateItem = catchAsync(
 
     await client.query("COMMIT");
 
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+
     return res.status(201).json({
       status: "success",
       data: updatedItem,
@@ -134,7 +162,7 @@ export const removeItem = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
     await pool.query("DELETE FROM carts WHERE id=$1", [id]);
-
+    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(204).json({
       status: "success",
       data: null,
@@ -146,6 +174,7 @@ export const clearCart = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.params.userid;
     await pool.query("DELETE from carts WHERE user_id=$1", [userId]);
+    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(204).json({
       status: "success",
       data: null,

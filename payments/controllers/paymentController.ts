@@ -6,10 +6,14 @@ import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
 import { getTimestamp } from "../utils/getTimestamp";
 import { afterPaymentOperations } from "../middlewares/paymentMiddleware";
+import {
+  dbQueryDurationHistogram,
+  requestCounter,
+} from "../middlewares/prometheusMiddleware";
+import { performance } from "perf_hooks";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const ORDER_URL = process.env.ORDER_URL;
-const CART_URL = process.env.CART_URL;
 
 interface MetaItem {
   name: string;
@@ -47,6 +51,8 @@ export const intiateSTKPush = catchAsync(
       headers: { Authorization: auth },
     });
 
+    requestCounter.labels(req.method, req.originalUrl).inc();
+    
     return res.status(201).json({
       status: "success",
       data: response.data,
@@ -96,6 +102,8 @@ export const stkPushCallback = catchAsync(
       TransactionDate,
     };
 
+    const dbQueryStart = performance.now();
+
     // Save transaction to database
     const client = await pool.connect();
     await client.query("BEGIN");
@@ -114,6 +122,11 @@ export const stkPushCallback = catchAsync(
     );
     const transaction = resultTransaction.rows[0];
     await client.query("COMMIT");
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
 
     return res.status(201).json({
       status: "success",
@@ -145,6 +158,7 @@ export const confirmPayment = catchAsync(
       },
     });
 
+    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(201).json({
       status: "success",
       data: response,
@@ -202,6 +216,8 @@ export const checkoutStripe = catchAsync(
     const checkoutSession: Stripe.Checkout.Session =
       await stripe.checkout.sessions.create(params);
 
+    const dbQueryStart = performance.now();
+
     // save to db
     const client = await pool.connect();
     await client.query("BEGIN");
@@ -212,6 +228,12 @@ export const checkoutStripe = catchAsync(
     );
     const transaction = resultTransaction.rows[0];
     await client.query("COMMIT");
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
 
     res.status(200).json({
       status: "success",
@@ -226,6 +248,8 @@ export const stripeSuccess = catchAsync(
     const token = req.token;
     const userId = req.user.id;
     await afterPaymentOperations(next, orderId, token, userId);
+
+    requestCounter.labels(req.method, req.originalUrl).inc();
     res.status(200).json({
       status: "success",
       data: {
@@ -237,6 +261,7 @@ export const stripeSuccess = catchAsync(
 
 export const stripeCancel = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    requestCounter.labels(req.method, req.originalUrl).inc();
     res.status(200).json({
       status: "success",
       data: {
@@ -249,8 +274,10 @@ export const stripeCancel = catchAsync(
 export const getTransactions = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user.id;
-
     const client = await pool.connect();
+
+    const dbQueryStart = performance.now();
+
     await client.query("BEGIN");
     const results = await client.query(
       "SELECT * FROM transactions WHERE user_id=$1",
@@ -258,6 +285,12 @@ export const getTransactions = catchAsync(
     );
     const transactions = results.rows;
     await client.query("COMMIT");
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",
@@ -270,6 +303,8 @@ export const getTransaction = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
 
+    const dbQueryStart = performance.now();
+
     const client = await pool.connect();
     await client.query("BEGIN");
     const results = await client.query(
@@ -278,6 +313,12 @@ export const getTransaction = catchAsync(
     );
     const transaction = results.rows[0];
     await client.query("COMMIT");
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",

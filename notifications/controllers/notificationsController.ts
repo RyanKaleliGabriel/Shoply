@@ -3,6 +3,8 @@ import catchAsync from "../utils/catchAsync";
 import AppError from "../utils/appError";
 import twilio from "twilio";
 import Email from "../utils/email";
+import {} from "perf_hooks"
+import { requestCounter } from "../middleware/prometheusMiddleware";
 
 const ORDER_URL = process.env.ORDER_URL;
 const PAYMENT_URL = process.env.PAYMENT_URL;
@@ -20,6 +22,7 @@ export const createMessage = catchAsync(
       to: "0704383812",
     });
 
+    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(201).json({
       status: "success",
       data: message.body,
@@ -71,8 +74,8 @@ export const sendReceipt = catchAsync(
     // Send the email
     await new Email(req.user, order, userTransaction).sendReceipt();
 
+    requestCounter.labels(req.method, req.originalUrl).inc();
     //Return a success message
-
     return res.status(200).json({
       status: "success",
       data: {
