@@ -16,10 +16,11 @@ export const metricsRegistry = catchAsync(
 
 // Prometheus metrics
 export const requestCounter = new Counter({
-  name: "httP_request_total",
+  name: "http_request_total",
   help: "Total number of http requests",
   labelNames: ["method", "route"],
 });
+
 register.registerMetric(requestCounter)
 
 export const loginUsersGauge = new Gauge({

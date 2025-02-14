@@ -100,10 +100,12 @@ export const createProduct = catchAsync(
       values
     );
     const product = result.rows[0];
+
     const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(201).json({
       status: "success",
@@ -116,7 +118,9 @@ export const deleteProduct = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
     await pool.query("DELETE FROM products WHERE id=$1", [id]);
+
     requestCounter.labels(req.method, req.originalUrl).inc();
+
     return res.status(204).json({
       status: "success",
       data: null,
@@ -139,6 +143,9 @@ export const updateProduct = catchAsync(
     );
 
     const product = result.rows[0];
+
+    requestCounter.labels(req.method, req.originalUrl).inc();
+
     return res.status(201).json({
       status: "success",
       data: product,
@@ -158,6 +165,7 @@ export const getCategories = catchAsync(
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
     requestCounter.labels(req.method, req.originalUrl).inc();
+
     return res.status(200).json({
       status: "success",
       results: categories.length,
@@ -216,6 +224,7 @@ export const createCategory = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(201).json({
       status: "success",
@@ -243,6 +252,8 @@ export const updateCategory = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
+    requestCounter.labels(req.method, req.originalUrl).inc();
+
     return res.status(201).json({
       status: "success",
       data: updatedCategory,

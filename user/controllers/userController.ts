@@ -36,6 +36,7 @@ export const signup = catchAsync(
       [userData.username, userData.email, hashedPassword, role]
     );
     const user = result.rows[0];
+    requestCounter.labels(req.method, req.originalUrl).inc();
     createSendToken(user, 201, res, req);
   }
 );
@@ -59,6 +60,7 @@ export const login = catchAsync(
     }
 
     loginUsersGauge.inc();
+    requestCounter.labels(req.method, req.originalUrl).inc();
     createSendToken(user, 200, res, req);
   }
 );
@@ -69,7 +71,7 @@ export const logout = (req: Request, res: Response) => {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
   });
-
+  requestCounter.labels(req.method, req.originalUrl).inc();
   res.status(200).json({ status: "success" });
 };
 
@@ -103,7 +105,7 @@ export const updatePassword = catchAsync(
       [hashedPassword, user.id]
     );
     const updatedUser = passwordUpdateResult.rows[0];
-
+    requestCounter.labels(req.method, req.originalUrl).inc();
     //Send the jwt token
     createSendToken(updatedUser, 201, res, req);
   }
@@ -111,7 +113,7 @@ export const updatePassword = catchAsync(
 
 export const getMe = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    requestCounter.labels(req.method, req.originalUrl).inc()
+    requestCounter.labels(req.method, req.originalUrl).inc();
     const dbQueryStart = performance.now();
     const result = await pool.query("SELECT * FROM users WHERE id = $1", [
       req.user.id,
@@ -148,6 +150,7 @@ export const updateMe = catchAsync(
     );
 
     const user = result.rows[0];
+    requestCounter.labels(req.method, req.originalUrl).inc();
     res.status(201).json({
       status: "success",
       data: user,
@@ -161,6 +164,7 @@ export const deleteMe = catchAsync(
       req.user.id,
     ]);
     const user = result.rows[0];
+    requestCounter.labels(req.method, req.originalUrl).inc();
     res.status(204).json({
       status: "success",
       data: null,
@@ -244,7 +248,7 @@ export const googleRedirect = catchAsync(
       const newUser = insertResult.rows[0];
       createSendToken(newUser, 201, res, req);
     }
-
+    requestCounter.labels(req.method, req.originalUrl).inc();
     createSendToken(user, 200, res, req);
   }
 );
