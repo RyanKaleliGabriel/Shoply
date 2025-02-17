@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express";
+import { performance } from "perf_hooks";
 import validator from "validator";
 import pool from "../db/con";
+import { logger } from "../middleware/logger";
 import {
   dbQueryDurationHistogram,
   loginUsersGauge,
@@ -14,8 +16,8 @@ import {
   checkUpdateFields,
   updateClause,
 } from "../utils/databaseFields";
+import { formattedDate } from "../utils/formattedDate";
 import { correctPassword, hashPassword } from "../utils/userUtils";
-import { performance } from "perf_hooks";
 
 // Create a new User.
 export const signup = catchAsync(
@@ -37,6 +39,7 @@ export const signup = catchAsync(
     );
     const user = result.rows[0];
     requestCounter.labels(req.method, req.originalUrl).inc();
+    logger.info(`${user.username} created a new account at ${formattedDate}`);
     createSendToken(user, 201, res, req);
   }
 );
@@ -61,6 +64,7 @@ export const login = catchAsync(
 
     loginUsersGauge.inc();
     requestCounter.labels(req.method, req.originalUrl).inc();
+    logger.info(`${user.username} logged in at ${formattedDate}`)
     createSendToken(user, 200, res, req);
   }
 );
@@ -72,6 +76,7 @@ export const logout = (req: Request, res: Response) => {
     httpOnly: true,
   });
   requestCounter.labels(req.method, req.originalUrl).inc();
+  logger.info(`${req.user.username} logged out at ${formattedDate}`)
   res.status(200).json({ status: "success" });
 };
 
@@ -224,6 +229,7 @@ export const googleRedirect = catchAsync(
       next(new AppError("Failed to fetch access token", 404));
     }
 
+    logger.info('Google access token successfully fetched')
     // Verify and extract information in the Google ID token
     const { id_token } = access_token_data;
 

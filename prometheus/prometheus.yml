@@ -3,7 +3,7 @@
  
  scrape_configs:
    - job_name: "prometheus"
-     scrape_interval: 5s
+     scrape_interval: 10m
      static_configs:
        - targets: ["localhost:9090"]
   
@@ -13,27 +13,27 @@
        - targets: ["user_service:5000"]
  
    - job_name: "payment_service"
-     scrape_interval: 5s
+     scrape_interval: 10m
      static_configs:
        - targets: ["payment_service:5002"]
  
    - job_name: "product_service "
-     scrape_interval: 5s
+     scrape_interval: 10m
      static_configs:
        - targets: ["payment_service:5001"]
  
    - job_name: "order_service"
-     scrape_interval: 5s
+     scrape_interval: 10m
      static_configs:
        - targets: ["payment_service:5003"]
  
    - job_name: "notifications_service"
-     scrape_interval: 5s
+     scrape_interval: 10m
      static_configs:
        - targets: ["notifications_service:5004"]
        
    - job_name: "cart_service"
-     scrape_interval: 5s
+     scrape_interval: 10m
      static_configs:
        - targets: ["cart_service:5005"]
  

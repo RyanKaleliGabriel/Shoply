@@ -12,6 +12,7 @@ import { trackResponseSize } from "./middleware/prometheusMiddleware";
 import cartRoute from "./routes/cartRoute";
 import metricsRoute from "./routes/metricsRoute"
 import AppError from "./utils/appError";
+import { requestLogger } from "./middleware/logger";
 
 dotenv.config();
 const app = express();
@@ -34,6 +35,7 @@ app.use(cors(corsOptions));
 
 app.use(helmet({ contentSecurityPolicy: false }));
 
+app.use(requestLogger)
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }

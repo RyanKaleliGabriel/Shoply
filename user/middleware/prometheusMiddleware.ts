@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import client, { Counter, Gauge, Histogram, Summary } from "prom-client";
 import catchAsync from "../utils/catchAsync";
+import {logger} from "./logger";
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -13,7 +14,6 @@ export const metricsRegistry = catchAsync(
   }
 );
 
-
 // Prometheus metrics
 export const requestCounter = new Counter({
   name: "http_request_total",
@@ -21,13 +21,13 @@ export const requestCounter = new Counter({
   labelNames: ["method", "route"],
 });
 
-register.registerMetric(requestCounter)
+register.registerMetric(requestCounter);
 
 export const loginUsersGauge = new Gauge({
   name: "logged_in_users",
   help: "Number of currently logged in users",
 });
-register.registerMetric(loginUsersGauge)
+register.registerMetric(loginUsersGauge);
 
 export const dbQueryDurationHistogram = new Histogram({
   name: "db_query_duration_seconds",
@@ -35,14 +35,14 @@ export const dbQueryDurationHistogram = new Histogram({
   labelNames: ["methods", "route"],
   buckets: [0.005, 0.01, 0.025, 0.05, 0.075, 0.1],
 });
-register.registerMetric(dbQueryDurationHistogram)
+register.registerMetric(dbQueryDurationHistogram);
 
 export const responseSizeSummary = new Summary({
   name: "http_response_size_bytes",
   help: "Summary of http response size in bytes",
   labelNames: ["method", "route"],
 });
-register.registerMetric(responseSizeSummary)
+register.registerMetric(responseSizeSummary);
 
 export const trackResponseSize = catchAsync(
   async (request: Request, response: Response, next: NextFunction) => {

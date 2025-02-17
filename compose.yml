@@ -158,8 +158,8 @@ services:
     image: grafana/promtail:2.9.0
     volumes:
       - app_data:/var/log
-      # - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml
-    # command: -config.file=/etc/promtail/promtail-config.yml
+      - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml
+    command: -config.file=/etc/promtail/promtail-config.yml
     networks:
       - grafana
     depends_on:

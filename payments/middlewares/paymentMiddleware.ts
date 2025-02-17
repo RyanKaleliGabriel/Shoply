@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
+import { logger } from "./logger";
 
 const USER_URL = process.env.USER_URL;
 const PRODUCT_URL = process.env.PRODUCT_URL;
@@ -23,12 +24,14 @@ export const authenticated = catchAsync(
     });
 
     if (!response.ok) {
+
       return next(new AppError("Failed to authenticate user. Try again.", 403));
     }
 
     const data = await response.json();
     req.user = data.data;
     req.token = token;
+    logger.info(`Successfully authenticated ${req.user.username}`);
     next();
   }
 );
@@ -45,7 +48,7 @@ export const restrictTo = (role: string) =>
     });
 
     if (!response.ok) {
-      return next(new AppError("Failed to authenticate user. Try again.", 403));
+      return next(new AppError("Failed to authorize user. Try again.", 403));
     }
 
     const user = await response.json();
@@ -106,6 +109,7 @@ export const afterPaymentOperations = async (
   );
 
   if (!responseProducts.ok) {
+
     return next(new AppError("Failed to fetch products. Try again", 500));
   }
 
@@ -151,6 +155,7 @@ export const afterPaymentOperations = async (
   }
 
   await updateItems(products);
+  logger.info("Items updated successfully");
   //Send Notifications
 
   // Send notification
@@ -166,6 +171,9 @@ export const afterPaymentOperations = async (
   );
 
   if (!responseNotification.ok) {
+
     return next(new AppError("Failed to send notifications. Try again", 500));
   }
+
+  logger.info("Purchase receipt successfully sent");
 };

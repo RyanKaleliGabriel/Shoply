@@ -1,6 +1,7 @@
 import app from "./app";
 import { Client } from "pg";
 import Consul from "consul";
+import { logger } from "./middleware/logger";
 
 const consul = new Consul({
   host: "consul",
@@ -8,7 +9,7 @@ const consul = new Consul({
 });
 
 const Environment = process.env.NODE_ENV;
-const Port_Cart = process.env.PORT_CART;
+const Port = process.env.PORT_CART;
 const Service = process.env.SERVICE_CART;
 
 const user = process.env.POSTGRES_USER;
@@ -42,13 +43,15 @@ const registerService = async () => {
   try {
     await consul.agent.service.register({
       id: serviceId,
-      name:   Service as string,
+      name: Service as string,
       address: Service as string,
-      port: Number(Port_Cart),
+      port: Number(Port),
     });
     console.log("Service registered with Consul");
+    logger.info("Service registered with Consul");
   } catch (error) {
     console.error("Failed to register service:", error);
+    logger.error("Failed to register service with consul", error);
   }
 };
 
@@ -58,12 +61,17 @@ const deregisterService = async () => {
     console.log("Service deregistered with Consul");
   } catch (error) {
     console.error("Failed to deregister service:", error);
+    logger.error("Failed to deregister service from consul");
   }
 };
 
-const server = app.listen(Port_Cart, async () => {
+const server = app.listen(Port, async () => {
   console.log(`${Service} server running on ${Environment} envrionment.`);
-  console.log(`${Service} server listening on port ${Port_Cart}.`);
+  console.log(`${Service} server listening on port ${Port}.`);
+  logger.info(
+    `${Service} server running on ${Environment} envrionment and port ${Port}.`
+  );
+  await connectDB();
   await registerService();
 });
 
@@ -72,9 +80,11 @@ const server = app.listen(Port_Cart, async () => {
 process.on("SIGINT", async () => {
   await deregisterService();
   server.close(() => process.exit(0));
+  logger.info(`${Service} gracefully shutting dow due to signal interruption.`);
 });
 
 process.on("SIGTERM", async () => {
   await deregisterService();
   server.close(() => process.exit(0));
+  logger.info(`${Service} gracefully shutting dow due to signal termination.`);
 });

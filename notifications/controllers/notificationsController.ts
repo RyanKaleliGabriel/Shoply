@@ -3,16 +3,15 @@ import catchAsync from "../utils/catchAsync";
 import AppError from "../utils/appError";
 import twilio from "twilio";
 import Email from "../utils/email";
-import {} from "perf_hooks"
+import {} from "perf_hooks";
 import { requestCounter } from "../middleware/prometheusMiddleware";
+import { logger } from "../middleware/logger";
 
 const ORDER_URL = process.env.ORDER_URL;
 const PAYMENT_URL = process.env.PAYMENT_URL;
 const accountSid = process.env.TWILLO_ACCOUNT_SID;
 const authToken = process.env.TWILLO_AUTH_TOKEN;
 const client = twilio(accountSid, authToken);
-
-
 
 export const createMessage = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -23,6 +22,8 @@ export const createMessage = catchAsync(
     });
 
     requestCounter.labels(req.method, req.originalUrl).inc();
+
+    logger.info("SMS message sent via twillio");
     return res.status(201).json({
       status: "success",
       data: message.body,
@@ -76,6 +77,10 @@ export const sendReceipt = catchAsync(
 
     requestCounter.labels(req.method, req.originalUrl).inc();
     //Return a success message
+
+    logger.info(
+      `Email sent successfully to ${req.user.username} at ${req.user.email}`
+    );
     return res.status(200).json({
       status: "success",
       data: {

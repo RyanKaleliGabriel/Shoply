@@ -12,6 +12,7 @@ import notificationsRoute from "./routes/notificationsRoute";
 import AppError from "./utils/appError";
 import {trackResponseSize } from "./middleware/prometheusMiddleware";
 import metricsRoute from "./routes/metricsRoute"
+import { logger, requestLogger } from "./middleware/logger";
 
 dotenv.config();
 const app = express();
@@ -34,6 +35,7 @@ app.use(cors(corsOptions));
 
 app.use(helmet({ contentSecurityPolicy: false }));
 
+app.use(requestLogger)
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
@@ -48,9 +50,10 @@ app.use(limtiter);
 app.use(trackResponseSize);
 app.use("/metrics", metricsRoute)
 app.use("/api/v1/notifications", notificationsRoute);
-app.use("*", (req: Request, res: Response, next: NextFunction) => {
+
+app.all("*", (req: Request, res: Response, next: NextFunction) => {
   return next(
-    new AppError(`${req.originalUrl} does not exist on this server`, 404)
+    new AppError(`Can't find ${req.originalUrl} on this server`, 404)
   );
 });
 
