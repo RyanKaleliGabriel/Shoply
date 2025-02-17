@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
+import { logger } from "./logger";
 
 const USER_URL = process.env.USER_URL;
 
@@ -25,6 +26,7 @@ export const authenticated = catchAsync(
     const data = await response.json();
     req.user = data.data;
     req.token = token;
+    logger.info(`Successfully authenticated ${req.user.username}`);
     next();
   }
 );
@@ -41,7 +43,7 @@ export const restrictTo = (role: string) =>
     });
 
     if (!response.ok) {
-      return next(new AppError("Failed to authenticate user. Try again.", 403));
+      return next(new AppError("Failed to authorize user. Try again.", 403));
     }
 
     const user = await response.json();

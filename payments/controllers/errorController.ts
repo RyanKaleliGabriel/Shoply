@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import AppError from "../utils/appError";
+import { logger } from "../middlewares/logger";
 
 const handleDuplicateDb = (err: any) => {
   const field = err.detail.match(/\((.*?)\)/)?.[1];
@@ -15,6 +16,7 @@ const handleNullDb = (err: any) => {
 
 const sendErrorDev = (err: any, req: Request, res: Response) => {
   console.error("Error 💥", err);
+  logger.error("Error 💥", err);
   return res.status(err.statusCode).json({
     status: err.status,
     error: err,
@@ -31,6 +33,7 @@ const sendErrorProd = (err: any, req: Request, res: Response) => {
     });
   }
   console.error("Error 💥", err);
+  logger.error("Error 💥", err);
   return res.status(500).json({
     status: "error",
     message: "Something went wrong.",

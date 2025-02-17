@@ -1,13 +1,14 @@
 import app from "./app";
 import { Client } from "pg";
 import Consul from "consul";
+import { logger } from "./middleware/logger";
 
 const consul = new Consul({
   host: "consul",
   port: 8500,
 });
 
-const PORT_PRODUCT = process.env.PORT_PRODUCT;
+const Port = process.env.PORT_PRODUCT;
 const Environment = process.env.NODE_ENV;
 const Service = process.env.SERVICE_PRODUCT;
 
@@ -32,8 +33,10 @@ const connectDB = async () => {
   try {
     await client.connect(); // Simple query to test connection
     console.log("Connected to Db");
+    logger.info(`${Service} successfully connected to db`);
   } catch (err) {
     console.error("Error when connecting to database.", err);
+    logger.error("Error when connecting to database.");
   }
 };
 
@@ -41,40 +44,48 @@ const registerService = async () => {
   try {
     await consul.agent.service.register({
       id: serviceId,
-      name:   Service as string,
+      name: Service as string,
       address: Service as string,
-      port: Number(PORT_PRODUCT),
+      port: Number(Port),
     });
     console.log("Service registered with Consul");
+    logger.info("Service registered with Consul");
   } catch (error) {
     console.error("Failed to register service:", error);
+    logger.error("Failed to register service with consul", error);
+
   }
 };
 
 const deregisterService = async () => {
   try {
     await consul.agent.service.deregister(serviceId);
-    console.log("Service deregistered with Consul");
+    console.log("Service registered with Consul");
+    logger.info("Service deregistered with Consul");
   } catch (error) {
-    console.error("Failed to deregister service:", error);
+    console.error("Failed to register service:", error);
+    logger.error("Failed to deregister service with consul", error);
   }
 };
 
-const server = app.listen(PORT_PRODUCT, async () => {
+const server = app.listen(Port, async () => {
   console.log(`${Service} server running on ${Environment} envrionment.`);
-  console.log(`${Service} server listening on port ${PORT_PRODUCT}.`);
+  console.log(`${Service} server listening on port ${Port}.`);
+  logger.info(
+    `${Service} server running on ${Environment} envrionment and port ${Port}.`
+  );
   await connectDB();
   await registerService();
 });
 
-// Handle graceful shutdown
-// Signal interruption
 process.on("SIGINT", async () => {
   await deregisterService();
   server.close(() => process.exit(0));
+  logger.info(`${Service} gracefully shutting dow due to signal interruption.`);
 });
 
 process.on("SIGTERM", async () => {
   await deregisterService();
   server.close(() => process.exit(0));
+  logger.info(`${Service} gracefully shutting dow due to signal termination.`);
 });

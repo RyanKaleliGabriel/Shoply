@@ -5,13 +5,14 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
-import path from "path"
+import path from "path";
 
 import globalErrorHandler from "./controllers/errorController";
 import orderRoute from "./routes/orderRoute";
 import AppError from "./utils/appError";
 import { trackResponseSize } from "./middleware/prometheusMiddleware";
-import metricsRoute from "./routes/metricsRoute"
+import metricsRoute from "./routes/metricsRoute";
+import { requestLogger } from "./middleware/logger";
 
 dotenv.config();
 const app = express();
@@ -19,12 +20,12 @@ const app = express();
 app.set("view engine", "pug");
 app.set("views", path.join(__dirname, "views"));
 
-app.disable("x-powered-by")
+app.disable("x-powered-by");
 
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
-app.use(compression())
+app.use(compression());
 
 const corsOptions = {
   origin: "http://127.0.0.1",
@@ -34,6 +35,7 @@ app.use(cors(corsOptions));
 
 app.use(helmet({ contentSecurityPolicy: false }));
 
+app.use(requestLogger);
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
@@ -46,7 +48,7 @@ const limtiter = rateLimit({
 
 app.use(limtiter);
 app.use(trackResponseSize);
-app.use("/metrics", metricsRoute)
+app.use("/metrics", metricsRoute);
 app.use("/api/v1/orders", orderRoute);
 
 app.use("*", (req: Request, res: Response, next: NextFunction) => {

@@ -3,6 +3,7 @@ import catchAsync from "../utils/catchAsync";
 import dotenv from "dotenv";
 import AppError from "../utils/appError";
 import axios from "axios";
+import { logger } from "./logger";
 
 dotenv.config();
 export const accessToken = catchAsync(
@@ -23,6 +24,7 @@ export const accessToken = catchAsync(
       return next(new AppError("Access token not found.", 404));
     }
     req.safaricomAccessToken = response.data.access_token;
+    logger.info('Safaricom access token successfully fetched.')
     next();
   }
 );

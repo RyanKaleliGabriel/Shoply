@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import pool from "../db/con";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
-import { register, Counter, Gauge, Histogram, Summary } from "prom-client";
+import { logger } from "./logger";
 
 // Generate a signed JWT token with the user's id
 const signToken = (id: string) => {
@@ -19,6 +19,7 @@ export const createSendToken = (
   req: Request
 ) => {
   const token = signToken(user.id);
+  logger.info("JWT Token signed");
   user.password = undefined;
 
   res.cookie("jwt", token, {
@@ -29,7 +30,7 @@ export const createSendToken = (
     httpOnly: true,
     secure: req.secure || req.header("X-forwaded-proto") === "https",
   });
-
+  logger.info(`JWT token created and saved successdully`);
   res.status(statusCode).json({
     status: "success",
     token,
@@ -83,6 +84,9 @@ export const protect = catchAsync(
 
     //Initialise req.user as the user (Protect the user)
     req.user = user.rows[0];
+    logger.info(
+      `User session successfully saved from ${req.originalUrl} in protect middleware.`
+    );
     next();
   }
 );
@@ -95,5 +99,3 @@ export const restrictTo = (role: string) => {
     next();
   };
 };
-
-

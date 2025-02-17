@@ -14,6 +14,7 @@ import { trackResponseSize } from "./middleware/prometheusMiddleware";
 import userRoute from "./routes/userRoute";
 import metricsRoute from "./routes/metricsRoute";
 import AppError from "./utils/appError";
+import { logger, requestLogger } from "./middleware/logger";
 
 dotenv.config();
 const app = express();
@@ -36,6 +37,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(helmet({ contentSecurityPolicy: false }));
+
+app.use(requestLogger);
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
