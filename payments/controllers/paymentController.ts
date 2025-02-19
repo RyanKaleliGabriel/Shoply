@@ -1,17 +1,16 @@
 import axios from "axios";
 import { NextFunction, Request, Response } from "express";
+import { performance } from "perf_hooks";
 import Stripe from "stripe";
 import pool from "../db/con";
+import { logger } from "../middlewares/logger";
+import { afterPaymentOperations } from "../middlewares/paymentMiddleware";
+import {
+  dbQueryDurationHistogram
+} from "../middlewares/prometheusMiddleware";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
 import { getTimestamp } from "../utils/getTimestamp";
-import { afterPaymentOperations } from "../middlewares/paymentMiddleware";
-import {
-  dbQueryDurationHistogram,
-  requestCounter,
-} from "../middlewares/prometheusMiddleware";
-import { performance } from "perf_hooks";
-import { logger } from "../middlewares/logger";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const ORDER_URL = process.env.ORDER_URL;
@@ -52,7 +51,6 @@ export const intiateSTKPush = catchAsync(
       headers: { Authorization: auth },
     });
     logger.info(`Post request for intiating stkpush sent to daraja sandbox`);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     logger.info("Mpesa STK push successfully intiated");
     return res.status(201).json({
@@ -162,7 +160,6 @@ export const confirmPayment = catchAsync(
     });
     logger.info("Post request for payment confimation successfully hit.");
 
-    requestCounter.labels(req.method, req.originalUrl).inc();
     logger.info("Mpesa payment successfully received");
 
     return res.status(201).json({
@@ -187,7 +184,6 @@ export const checkoutStripe = catchAsync(
     });
 
     if (!responseOrder.ok) {
-
       return next(
         new AppError(
           "Failed to fetch order. Please try again later",
@@ -222,7 +218,7 @@ export const checkoutStripe = catchAsync(
     };
     const checkoutSession: Stripe.Checkout.Session =
       await stripe.checkout.sessions.create(params);
-    logger.info("Stripe session successfully created")
+    logger.info("Stripe session successfully created");
 
     const dbQueryStart = performance.now();
 
@@ -241,9 +237,8 @@ export const checkoutStripe = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
-    logger.info("Stripe session created successfully")
+    logger.info("Stripe session created successfully");
     res.status(200).json({
       status: "success",
       session: checkoutSession,
@@ -258,9 +253,7 @@ export const stripeSuccess = catchAsync(
     const userId = req.user.id;
     await afterPaymentOperations(next, orderId, token, userId);
 
-    requestCounter.labels(req.method, req.originalUrl).inc();
-
-    logger.info("Stripe payment was successful")
+    logger.info("Stripe payment was successful");
     res.status(200).json({
       status: "success",
       data: {
@@ -272,8 +265,7 @@ export const stripeSuccess = catchAsync(
 
 export const stripeCancel = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    requestCounter.labels(req.method, req.originalUrl).inc();
-    logger.info("Stripe payment was cancelled")
+    logger.info("Stripe payment was cancelled");
     res.status(200).json({
       status: "success",
       data: {
@@ -302,7 +294,6 @@ export const getTransactions = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",
@@ -330,7 +321,6 @@ export const getTransaction = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",

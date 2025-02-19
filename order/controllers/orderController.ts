@@ -1,10 +1,12 @@
 import { NextFunction, Request, Response } from "express";
+import { performance } from "perf_hooks";
 import pool from "../db/con";
+import {
+  dbQueryDurationHistogram
+} from "../middleware/prometheusMiddleware";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
 import { checkUpdateFields, updateClause } from "../utils/databaseFields";
-import { performance } from "perf_hooks";
-import { dbQueryDurationHistogram, requestCounter } from "../middleware/prometheusMiddleware";
 
 const USER_URL = process.env.USER_URL;
 const PRODUCT_URL = process.env.PRODUCT_URL;
@@ -24,7 +26,6 @@ export const getOrders = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",
@@ -89,7 +90,6 @@ export const getOrder = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",
@@ -188,7 +188,6 @@ export const deleteOrder = catchAsync(
 
     await client.query("COMMIT");
 
-    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(204).json({
       status: "success",
       data: null,

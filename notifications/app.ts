@@ -1,18 +1,18 @@
-import express, { Request, Response, NextFunction } from "express";
-import dotenv from "dotenv";
-import morgan from "morgan";
-import cors from "cors";
-import path from "path";
-import helmet from "helmet";
 import compression from "compression";
+import cors from "cors";
+import dotenv from "dotenv";
+import express, { NextFunction, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import morgan from "morgan";
+import path from "path";
 
 import globalErrorHandler from "./controllers/errorController";
+import { requestLogger } from "./middleware/logger";
+import { latencyAndThroughput, trackResponseSize } from "./middleware/prometheusMiddleware";
+import metricsRoute from "./routes/metricsRoute";
 import notificationsRoute from "./routes/notificationsRoute";
 import AppError from "./utils/appError";
-import {trackResponseSize } from "./middleware/prometheusMiddleware";
-import metricsRoute from "./routes/metricsRoute"
-import { logger, requestLogger } from "./middleware/logger";
 
 dotenv.config();
 const app = express();
@@ -47,7 +47,7 @@ const limtiter = rateLimit({
 });
 
 app.use(limtiter);
-app.use(trackResponseSize);
+app.use(latencyAndThroughput)
 app.use("/metrics", metricsRoute)
 app.use("/api/v1/notifications", notificationsRoute);
 

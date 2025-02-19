@@ -127,6 +127,18 @@ services:
       - order
       - notifications
 
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter
+    container_name: nginx_exporter
+    command:
+      - '-nginx.scrape-uri=http://nginx:80/nginx_status'
+    ports:
+      - "9113:9113"
+    networks:
+      -  grafana
+    depends_on:
+      - nginx
+
   consul:
     image: hashicorp/consul:1.15.4
     container_name: consul

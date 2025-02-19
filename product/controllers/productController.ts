@@ -1,5 +1,9 @@
 import { NextFunction, Request, Response } from "express";
+import { performance } from "perf_hooks";
 import pool from "../db/con";
+import {
+  dbQueryDurationHistogram
+} from "../middleware/prometheusMiddleware";
 import APIfeatures from "../utils/ApiFeatures";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
@@ -9,11 +13,6 @@ import {
   dynamicQuery,
   updateClause,
 } from "../utils/databaseFields";
-import { performance } from "perf_hooks";
-import {
-  dbQueryDurationHistogram,
-  requestCounter,
-} from "../middleware/prometheusMiddleware";
 
 export const getProducts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -29,8 +28,6 @@ export const getProducts = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",
@@ -56,7 +53,6 @@ export const getProduct = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(200).json({
       status: "success",
       data: product,
@@ -105,7 +101,6 @@ export const createProduct = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(201).json({
       status: "success",
@@ -118,8 +113,6 @@ export const deleteProduct = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
     await pool.query("DELETE FROM products WHERE id=$1", [id]);
-
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(204).json({
       status: "success",
@@ -144,8 +137,6 @@ export const updateProduct = catchAsync(
 
     const product = result.rows[0];
 
-    requestCounter.labels(req.method, req.originalUrl).inc();
-
     return res.status(201).json({
       status: "success",
       data: product,
@@ -164,7 +155,6 @@ export const getCategories = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",
@@ -192,7 +182,6 @@ export const getCategory = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",
@@ -224,7 +213,6 @@ export const createCategory = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(201).json({
       status: "success",
@@ -252,7 +240,6 @@ export const updateCategory = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(201).json({
       status: "success",
@@ -266,7 +253,6 @@ export const deleteCategory = catchAsync(
     const id = req.params.id;
     const result = await pool.query("DELETE FROM categories WHERE id=$1", [id]);
 
-    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(204).json({
       status: "success",
       data: null,

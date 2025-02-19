@@ -13,8 +13,11 @@ import {
 
 } from "../controllers/productController";
 import { authenticated, restrictTo } from "../middleware/productMiddleware";
+import { trackResponseSize } from "../middleware/prometheusMiddleware";
 
 const router = express.Router();
+
+router.use(trackResponseSize)
 
 router.get("/", getProducts);
 router.get("/:id", getProduct);

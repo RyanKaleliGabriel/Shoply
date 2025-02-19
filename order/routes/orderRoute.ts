@@ -7,9 +7,10 @@ import {
   updateOrder,
 } from "../controllers/orderController";
 import { authenticated, restrictTo } from "../middleware/orderMiddleware";
+import { trackResponseSize } from "../middleware/prometheusMiddleware";
 
 const router = express.Router();
-
+router.use(trackResponseSize)
 router.use(authenticated);
 router.get("/", getOrders);
 router.get("/:id", getOrder);

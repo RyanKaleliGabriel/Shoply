@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import client, { Counter, Gauge, Histogram, Summary } from "prom-client";
 import catchAsync from "../utils/catchAsync";
-import {logger} from "./logger";
+import { logger } from "./logger";
 
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
@@ -18,7 +18,7 @@ export const metricsRegistry = catchAsync(
 export const requestCounter = new Counter({
   name: "http_request_total",
   help: "Total number of http requests",
-  labelNames: ["method", "route"],
+  labelNames: ["method", "route", "status_code"],
 });
 
 register.registerMetric(requestCounter);
@@ -44,6 +44,15 @@ export const responseSizeSummary = new Summary({
 });
 register.registerMetric(responseSizeSummary);
 
+// Histogram to measure request latency
+const httpRequestDuration = new Histogram({
+  name: "http_request_duration_seconds",
+  help: "Request duration in seconds",
+  labelNames: ["method", "route", "status_code"],
+  buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5],
+});
+register.registerMetric(httpRequestDuration);
+
 export const trackResponseSize = catchAsync(
   async (request: Request, response: Response, next: NextFunction) => {
     const originalSend = response.send;
@@ -68,3 +77,21 @@ export const trackResponseSize = catchAsync(
     return next();
   }
 );
+
+export const latencyAndThroughput = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const duration = (Date.now() - start) / 1000;
+    httpRequestDuration
+      .labels(req.method, req.originalUrl, res.statusCode.toString())
+      .observe(duration);
+    requestCounter
+      .labels(req.method, req.originalUrl, res.statusCode.toString())
+      .inc();
+  });
+  next();
+};

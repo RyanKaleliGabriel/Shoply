@@ -8,8 +8,11 @@ import {
   updateItem,
 } from "../controllers/cartController";
 import { authenticated, restrictTo } from "../middleware/cartMiddleware";
+import { trackResponseSize } from "../middleware/prometheusMiddleware";
 
 const router = express.Router();
+
+router.use(trackResponseSize)
 
 router.use(authenticated);
 router.get("/", getItems);
