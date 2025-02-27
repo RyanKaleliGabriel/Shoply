@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notifcations-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: notifcations-service
+  template:  
+    metadata:
+      labels:
+        app: notifcations-service
+    spec:
+      containers:
+        - name: notifcations-service
+          image: ryankaleligabriel/notifcations:latest
+          ports:
+            - containerPort: 5004
+          envFrom:
+            - configMapRef:
+                name: notifcations-config
+            - secretRef:
+                name: notifcations-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/notifcations/health
+              port: 5004
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/v1/notifcations/health
+              port: 5004
+            initialDelaySeconds: 5
+            periodSeconds: 10
