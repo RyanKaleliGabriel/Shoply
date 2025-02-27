@@ -48,7 +48,7 @@ jobs:
                 context: ./${{ matrix.service }}
                 file: ./${{ matrix.service }}/Dockerfile
                 push: true
-                tags: ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:latest
+                tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest
                 cache-from: type=local,src=/tmp/.buildx-cache
                 cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
 
