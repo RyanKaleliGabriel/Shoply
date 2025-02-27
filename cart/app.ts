@@ -8,11 +8,11 @@ import morgan from "morgan";
 import path from "path";
 
 import globalErrorHandler from "./controllers/errorController";
-import { trackResponseSize } from "./middleware/prometheusMiddleware";
-import cartRoute from "./routes/cartRoute";
-import metricsRoute from "./routes/metricsRoute"
-import AppError from "./utils/appError";
 import { requestLogger } from "./middleware/logger";
+import { latencyAndThroughput, trackResponseSize } from "./middleware/prometheusMiddleware";
+import cartRoute from "./routes/cartRoute";
+import metricsRoute from "./routes/metricsRoute";
+import AppError from "./utils/appError";
 
 dotenv.config();
 const app = express();
@@ -47,7 +47,8 @@ const limtiter = rateLimit({
 });
 
 app.use(limtiter);
-app.use(trackResponseSize);
+
+app.use(latencyAndThroughput)
 app.use("/metrics", metricsRoute)
 app.use("/api/v1/cart", cartRoute);
 

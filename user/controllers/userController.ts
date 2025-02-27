@@ -6,7 +6,6 @@ import { logger } from "../middleware/logger";
 import {
   dbQueryDurationHistogram,
   loginUsersGauge,
-  requestCounter,
 } from "../middleware/prometheusMiddleware";
 import { createSendToken } from "../middleware/userMiddleware";
 import AppError from "../utils/appError";
@@ -33,12 +32,20 @@ export const signup = catchAsync(
       return next(new AppError("Please provide a valid email", 400));
     }
     const hashedPassword = await hashPassword(userData.password);
+
+    const dbQueryStart = performance.now();
+
     const result = await pool.query(
       "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *",
       [userData.username, userData.email, hashedPassword, role]
     );
     const user = result.rows[0];
-    requestCounter.labels(req.method, req.originalUrl).inc();
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+
     logger.info(`${user.username} created a new account at ${formattedDate}`);
     createSendToken(user, 201, res, req);
   }
@@ -50,6 +57,7 @@ export const login = catchAsync(
     const loginData = req.body;
     checkRequiredFields(requiredFields, loginData, next);
 
+    const dbQueryStart = performance.now();
     // Query the user using the email input.
     const result = await pool.query(
       "SELECT * FROM users u WHERE u.email = $1",
@@ -57,14 +65,19 @@ export const login = catchAsync(
     );
     const user = result.rows[0];
 
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+
     // Check if the user exists and if password is correct
     if (!user || !(await correctPassword(loginData.password, user.password))) {
       return next(new AppError("Invalid email or password!", 401));
     }
 
     loginUsersGauge.inc();
-    requestCounter.labels(req.method, req.originalUrl).inc();
-    logger.info(`${user.username} logged in at ${formattedDate}`)
+
+    logger.info(`${user.username} logged in at ${formattedDate}`);
     createSendToken(user, 200, res, req);
   }
 );
@@ -75,8 +88,7 @@ export const logout = (req: Request, res: Response) => {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
   });
-  requestCounter.labels(req.method, req.originalUrl).inc();
-  logger.info(`${req.user.username} logged out at ${formattedDate}`)
+  logger.info(`${req.user.username} logged out at ${formattedDate}`);
   res.status(200).json({ status: "success" });
 };
 
@@ -105,12 +117,19 @@ export const updatePassword = catchAsync(
     // // Update the password
     const hashedPassword = await hashPassword(req.body.password);
 
+    const dbQueryStart = performance.now();
+
     const passwordUpdateResult = await pool.query(
       "UPDATE users SET password = $1 WHERE id = $2 RETURNING *",
       [hashedPassword, user.id]
     );
     const updatedUser = passwordUpdateResult.rows[0];
-    requestCounter.labels(req.method, req.originalUrl).inc();
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+
     //Send the jwt token
     createSendToken(updatedUser, 201, res, req);
   }
@@ -118,11 +137,11 @@ export const updatePassword = catchAsync(
 
 export const getMe = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    requestCounter.labels(req.method, req.originalUrl).inc();
     const dbQueryStart = performance.now();
     const result = await pool.query("SELECT * FROM users WHERE id = $1", [
       req.user.id,
     ]);
+
     const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
@@ -133,7 +152,6 @@ export const getMe = catchAsync(
       return next(new AppError("No user found with that id", 404));
     }
 
-    requestCounter.labels(req.method, req.originalUrl).inc();
     res.status(200).json({
       status: "success",
       data: user,
@@ -149,13 +167,20 @@ export const updateMe = catchAsync(
     checkUpdateFields(updates, next);
     const { setClause, values } = updateClause(updates, id, next);
 
+    const dbQueryStart = performance.now();
+
     const result = await pool.query(
       `UPDATE users SET ${setClause} WHERE id=$1 RETURNING *`,
       values
     );
 
     const user = result.rows[0];
-    requestCounter.labels(req.method, req.originalUrl).inc();
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+
     res.status(201).json({
       status: "success",
       data: user,
@@ -165,11 +190,18 @@ export const updateMe = catchAsync(
 
 export const deleteMe = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    const dbQueryStart = performance.now();
+
     const result = await pool.query("DELETE FROM users WHERE id=$1", [
       req.user.id,
     ]);
     const user = result.rows[0];
-    requestCounter.labels(req.method, req.originalUrl).inc();
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
+
     res.status(204).json({
       status: "success",
       data: null,
@@ -229,7 +261,7 @@ export const googleRedirect = catchAsync(
       next(new AppError("Failed to fetch access token", 404));
     }
 
-    logger.info('Google access token successfully fetched')
+    logger.info("Google access token successfully fetched");
     // Verify and extract information in the Google ID token
     const { id_token } = access_token_data;
 
@@ -240,11 +272,18 @@ export const googleRedirect = catchAsync(
     const token_info_data = await token_info_response.json();
     const { email, name } = token_info_data;
 
+    const dbQueryStart = performance.now();
+
     //  Use the information in the Google ID token to manage user authentication
     const result = await pool.query("SELECT * FROM users WHERE email=$1", [
       email,
     ]);
     const user = result.rows[0];
+
+    const dbQueryDuration = (performance.now() - dbQueryStart) / 1000;
+    dbQueryDurationHistogram
+      .labels(req.method, req.originalUrl)
+      .observe(dbQueryDuration);
 
     if (!user) {
       const insertResult = await pool.query(
@@ -254,7 +293,7 @@ export const googleRedirect = catchAsync(
       const newUser = insertResult.rows[0];
       createSendToken(newUser, 201, res, req);
     }
-    requestCounter.labels(req.method, req.originalUrl).inc();
+
     createSendToken(user, 200, res, req);
   }
 );

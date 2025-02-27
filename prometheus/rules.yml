@@ -9,3 +9,14 @@ groups:
         annotations:
           summary: "High rate of HTTP requests"
           description: "The rate of HTTP requests has exceeded 120 requests per minute over the last 1 minute."
+
+  - name: nginx_alerts
+    rules:
+      - alert: "Nginx Gateway Down"
+        expr: up{job="nginx"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API Gateway unreachable"
+          description: "Nginx has been down for more than 1 minute"

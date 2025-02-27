@@ -52,7 +52,6 @@ export const getItems = catchAsync(
     dbQueryDurationHistogram
       .labels(req.method, req.originalUrl)
       .observe(dbQueryDuration);
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     return res.status(200).json({
       status: "success",
@@ -162,7 +161,6 @@ export const removeItem = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
     await pool.query("DELETE FROM carts WHERE id=$1", [id]);
-    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(204).json({
       status: "success",
       data: null,
@@ -174,7 +172,6 @@ export const clearCart = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.params.userid;
     await pool.query("DELETE from carts WHERE user_id=$1", [userId]);
-    requestCounter.labels(req.method, req.originalUrl).inc();
     return res.status(204).json({
       status: "success",
       data: null,

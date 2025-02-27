@@ -10,7 +10,10 @@ import path from "path";
 import globalErrorHandler from "./controllers/errorController";
 import orderRoute from "./routes/orderRoute";
 import AppError from "./utils/appError";
-import { trackResponseSize } from "./middleware/prometheusMiddleware";
+import {
+  latencyAndThroughput,
+  trackResponseSize,
+} from "./middleware/prometheusMiddleware";
 import metricsRoute from "./routes/metricsRoute";
 import { requestLogger } from "./middleware/logger";
 
@@ -47,7 +50,7 @@ const limtiter = rateLimit({
 });
 
 app.use(limtiter);
-app.use(trackResponseSize);
+app.use(latencyAndThroughput);
 app.use("/metrics", metricsRoute);
 app.use("/api/v1/orders", orderRoute);
 

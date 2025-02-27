@@ -1,11 +1,10 @@
 import { NextFunction, Request, Response } from "express";
-import catchAsync from "../utils/catchAsync";
-import AppError from "../utils/appError";
+import { } from "perf_hooks";
 import twilio from "twilio";
-import Email from "../utils/email";
-import {} from "perf_hooks";
-import { requestCounter } from "../middleware/prometheusMiddleware";
 import { logger } from "../middleware/logger";
+import AppError from "../utils/appError";
+import catchAsync from "../utils/catchAsync";
+import Email from "../utils/email";
 
 const ORDER_URL = process.env.ORDER_URL;
 const PAYMENT_URL = process.env.PAYMENT_URL;
@@ -20,8 +19,6 @@ export const createMessage = catchAsync(
       from: "+18483455315",
       to: "0704383812",
     });
-
-    requestCounter.labels(req.method, req.originalUrl).inc();
 
     logger.info("SMS message sent via twillio");
     return res.status(201).json({
@@ -75,7 +72,6 @@ export const sendReceipt = catchAsync(
     // Send the email
     await new Email(req.user, order, userTransaction).sendReceipt();
 
-    requestCounter.labels(req.method, req.originalUrl).inc();
     //Return a success message
 
     logger.info(

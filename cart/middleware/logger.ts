@@ -7,7 +7,7 @@ export const logger = winston.createLogger({
     new LokiTransport({
       host: "http://loki:3100",
       json: true,
-      labels: { service: "user_service" },
+      labels: { service: "cart_service" },
       format: winston.format.json(),
     }),
   ],
@@ -28,7 +28,7 @@ export const requestLogger = (
       url: req.originalUrl,
       status: res.statusCode,
       duration: `${duration}ms`,
-      labels: { service: "user_service" },
+      labels: { service: "cart_service" },
     });
   });
 

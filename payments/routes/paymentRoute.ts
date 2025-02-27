@@ -11,8 +11,10 @@ import {
   stripeSuccess,
 } from "../controllers/paymentController";
 import { authenticated, restrictTo } from "../middlewares/paymentMiddleware";
+import { trackResponseSize } from "../middlewares/prometheusMiddleware";
 
 const router = express.Router();
+router.use(trackResponseSize)
 
 router.use(authenticated);
 
