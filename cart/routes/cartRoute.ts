@@ -1,9 +1,9 @@
 import express from "express";
 import {
   addItem,
-
   clearCart,
   getItems,
+  healthCheck,
   removeItem,
   updateItem,
 } from "../controllers/cartController";
@@ -12,8 +12,8 @@ import { trackResponseSize } from "../middleware/prometheusMiddleware";
 
 const router = express.Router();
 
-router.use(trackResponseSize)
-
+router.use(trackResponseSize);
+router.get("/health", healthCheck);
 router.use(authenticated);
 router.get("/", getItems);
 

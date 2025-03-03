@@ -5,6 +5,7 @@ import {
   confirmPayment,
   getTransaction,
   getTransactions,
+  healthCheck,
   intiateSTKPush,
   stkPushCallback,
   stripeCancel,
@@ -16,6 +17,7 @@ import { trackResponseSize } from "../middlewares/prometheusMiddleware";
 const router = express.Router();
 router.use(trackResponseSize)
 
+router.get("/health", healthCheck)
 router.use(authenticated);
 
 router.get("/transactions", getTransactions);

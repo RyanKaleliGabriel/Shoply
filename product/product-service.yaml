@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: product
+  name: product-service
 spec: 
   selector:
-    app: product
+    app: product-service
   ports:
   - protocol: TCP
     port: 5001

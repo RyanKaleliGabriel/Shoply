@@ -53,6 +53,7 @@ app.use(latencyAndThroughput)
 app.use("/metrics", metricsRoute);
 app.use("/api/v1/products", productRoute);
 
+
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
   logger.error(
     new AppError(`Can't find ${req.originalUrl} on this server`, 404)
