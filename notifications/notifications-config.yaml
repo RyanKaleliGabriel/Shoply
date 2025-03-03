@@ -4,7 +4,7 @@ metadata:
   name: notifications-config
 data:
   NODE_ENV: "development"
-  SERVICE_NOTIFCATION: "CART"
+  SERVICE_NOTIFCATION: NOTIFICATIONS"
   PORT_NOTIFCATION: "5004"
   USER_URL: "http://user-service:5000"
   ORDER_URL: "http://order-service:5003"
