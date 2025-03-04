@@ -234,3 +234,10 @@ export const updateOrder = catchAsync(
     });
   }
 );
+
+
+export const healthCheck = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    res.status(200).json({ status: "healthy" });
+  }
+);

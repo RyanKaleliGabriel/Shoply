@@ -1,9 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { performance } from "perf_hooks";
 import pool from "../db/con";
-import {
-  dbQueryDurationHistogram
-} from "../middleware/prometheusMiddleware";
+import { dbQueryDurationHistogram } from "../middleware/prometheusMiddleware";
 import APIfeatures from "../utils/ApiFeatures";
 import AppError from "../utils/appError";
 import catchAsync from "../utils/catchAsync";
@@ -257,5 +255,11 @@ export const deleteCategory = catchAsync(
       status: "success",
       data: null,
     });
+  }
+);
+
+export const healthCheck = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    res.status(200).json({ status: "healthy" });
   }
 );

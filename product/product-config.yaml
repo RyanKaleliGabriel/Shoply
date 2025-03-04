@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-config
+data:
+  NODE_ENV: "development"
+  SERVICE_PRODUCT: "PRODUCT"
+  PORT_PRODUCT: "5001"
+  USER_URL: "http://user-service:5000"
+  ORDER_URL: "http://order-service:5003"
+  PAYMENT_URL: "http://payment-service:5002"
+  PRODUCT_URL: "http://product-service:5001"
+  NOTIFICATIONS_URL: "http://notifications-service:5004"
+  CART_URL: "http://cart-service:5005"
+  POSTGRES_DB: "shoply"
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: "shoply"
+  POSTGRES_HOST: "db-service"

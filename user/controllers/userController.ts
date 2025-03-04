@@ -297,3 +297,10 @@ export const googleRedirect = catchAsync(
     createSendToken(user, 200, res, req);
   }
 );
+
+
+export const healthCheck = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    res.status(200).json({ status: "healthy" });
+  }
+);

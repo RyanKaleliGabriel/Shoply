@@ -3,6 +3,7 @@ import {
   deleteMe,
   getMe,
   googleRedirect,
+  healthCheck,
   login,
   logout,
   signINGoogle,
@@ -15,8 +16,9 @@ import { trackResponseSize } from "../middleware/prometheusMiddleware";
 
 const router = express.Router();
 
-router.use(trackResponseSize)
+router.use(trackResponseSize);
 
+router.get("/health", healthCheck);
 router.post("/signup", signup);
 router.post("/login", login);
 router.get("/signInGoogle", signINGoogle);

@@ -12,6 +12,14 @@ const accountSid = process.env.TWILLO_ACCOUNT_SID;
 const authToken = process.env.TWILLO_AUTH_TOKEN;
 const client = twilio(accountSid, authToken);
 
+
+export const healthCheck = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    res.status(200).json({ status: "healthy" });
+  }
+);
+
+
 export const createMessage = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const message = await client.messages.create({

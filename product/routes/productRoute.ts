@@ -10,6 +10,7 @@ import {
   getProduct,
   updateCategory,
   updateProduct,
+  healthCheck,
 
 } from "../controllers/productController";
 import { authenticated, restrictTo } from "../middleware/productMiddleware";
@@ -20,6 +21,7 @@ const router = express.Router();
 router.use(trackResponseSize)
 
 router.get("/", getProducts);
+router.get("/health", healthCheck)
 router.get("/:id", getProduct);
 router.get("/categories/all", getCategories);
 router.get("/categories/:id", getCategory);
