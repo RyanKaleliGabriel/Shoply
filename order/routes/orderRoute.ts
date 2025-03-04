@@ -12,7 +12,8 @@ import { trackResponseSize } from "../middleware/prometheusMiddleware";
 
 const router = express.Router();
 router.use(trackResponseSize)
-router.get("health", healthCheck)
+router.get("/health", healthCheck) 
+
 router.use(authenticated);
 router.get("/", getOrders);
 router.get("/:id", getOrder);
