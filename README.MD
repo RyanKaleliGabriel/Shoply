@@ -33,3 +33,7 @@ This project offerrd a comprehensive approach to building a modern, scalable e-c
  - CI/CD Pipeline: Automates the build, test, and deployment process of each microservice.  Github actions used for this
 
  - Deployed the Platform: Used Kubernetes for production deployment. Implement auto-scaling and load balancing.
+
+
+## Project 
+https://roadmap.sh/projects/scalable-ecommerce-platform?fl=0
