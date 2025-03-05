@@ -10,7 +10,7 @@ const consul = new Consul({
 
 const Environment = process.env.NODE_ENV;
 const Port = process.env.PORT_NOTIFICATION;
-const Service = process.env.SERVICE_NOTIFICATION;
+const Service = process.env.SERVICE_NOTIFCATION;
 
 // Consul
 const serviceId = `${Service}-${Math.floor(Math.random() * 1000)}`;

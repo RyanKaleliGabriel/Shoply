@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notifications-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: notifications-service
+  template:  
+    metadata:
+      labels:
+        app: notifications-service
+    spec:
+      containers:
+        - name: notifications-service
+          image: ryankaleligabriel/notifications:latest
+          ports:
+            - containerPort: 5004
+          envFrom:
+            - configMapRef:
+                name: notifications-config 
+            - secretRef:
+                name: notifications-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/notifications/health
+              port: 5004
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/v1/notifications/health
+              port: 5004
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: notifications-service
+spec: 
+  selector:
+    app: notifications-service
+  ports:
+  - protocol: TCP
+    port: 5004
+    targetPort: 5004
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: notifications-secrets
+type: Opaque
+data:
+  POSTGRES_PASSWORD: "c2VjcmV0"
+  TWILLO_ACCOUNT_SID: "QUNiYjhhM2FkNTNhZGQxNGY2MzkwYzU0MWRhZThiNjAzNw=="
+  TWILLO_AUTH_TOKEN: "YmVkNGQwYTYwMDY5MzI3ODkzZDAyYzIwNTJiZDRkNGY="
+  TWILLO_PHONE_NUMBER: "KzE4NDgzNDU1MzE1"
+  EMAIL_FROM: "c2hvcGx5LnJr"
+  EMAIL_PORT: "NTg3"
+  EMAIL_USERNAME: "ODg4YzE4YTQ0ZmUxYzM="
+  EMAIL_PASSWORD: "MzhkMjM3NmU4ZTBkZjM="
+  EMAIL_HOST: "c2FuZGJveC5zbXRwLm1haWx0cmFwLmlv"
+
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notifications-config
+data:
+  NODE_ENV: "development"
+  SERVICE_NOTIFICATION: "NOTIFICATIONS"
+  PORT_NOTIFICATION: "5004"
+  USER_URL: "http://user-service:5000"
+  ORDER_URL: "http://order-service:5003"
+  PAYMENT_URL: "http://payment-service:5002"
+  PRODUCT_URL: "http://product-service:5001"
+  NOTIFICATIONS_URL: "http://notifications-service:5004"
+  CART_URL: "http://cart-service:5005"
+  POSTGRES_DB: "shoply"
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: "shoply"
+  POSTGRES_HOST: "db-service"

@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: user-service
+  template:  # <-- Moved outside selector
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: ryankaleligabriel/user:latest
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: user-config
+            - secretRef:
+                name: user-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/users/health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/v1/users/health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec: 
+  selector:
+    app: user-service
+  ports:
+  - protocol: TCP
+    port: 5000
+    targetPort: 5000
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: user-secrets
+type: Opaque
+data:
+  JWT_SECRET: "eW91ci1zZWNyZXQtdmFsdWU="
+  GOOGLE_CLIENT_SECRET: "R09DU1BYLVplRGVQeWRFUDFfUFJTbF9GY0llaUVWemMyUFg="
+  POSTGRES_PASSWORD: "c2VjcmV0"
+  APP_PASSWORD: "bGJudCBzdHR2IHZnaXYgcGl3dg=="
+
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-config
+data:
+  NODE_ENV: "development"
+  SERVICE_USER: "USER"
+  PORT_USER: "5000"
+  JWT_EXPIRES_IN: "30d"
+  JWT_COOKIE_EXPIRES_IN: "30"
+  GOOGLE_CLIENT_ID: "410109864972-s2jpi6o39mfdfme51rse8krggndroclm.apps.googleusercontent.com"
+  GOOGLE_OAUTH_URL: "https://accounts.google.com/o/oauth2/v2/auth"
+  GOOGLE_ACCESS_TOKEN_URL: "https://oauth2.googleapis.com/token"
+  GOOGLE_TOKEN_INFO_URL: "https://oauth2.googleapis.com/tokeninfo"
+  USER_URL: "http://user-service:5000"
+  ORDER_URL: "http://order-service:5003"
+  PAYMENT_URL: "http://payment-service:5002"
+  PRODUCT_URL: "http://product-service:5001"
+  NOTIFICATIONS_URL: "http://notifications-service:5004"
+  CART_URL: "http://cart-service:5005"
+  POSTGRES_DB: "shoply"
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: "shoply"
+  POSTGRES_HOST: "db-service"
