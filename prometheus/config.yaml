@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus/prometheus.yml
+          subPath: prometheus.yml
+        - name: prometheus-rules
+          mountPath: /etc/prometheus/rules.yml
+          subPath: rules.yml
+      volumes:
+      - name: prometheus-config
+        configMap:
+          name: prometheus-config
+      - name: prometheus-rules
+        configMap:
+          name: prometheus-rules
+
+--- 
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+      global:
+        scrape_interval: 15s
+      
+      scrape_configs:
+        - job_name: "prometheus"
+          scrape_interval: 10m
+          static_configs:
+            - targets: ["localhost:9090"]
+       
+        - job_name: "user_service"
+          scrape_interval: 10s
+          static_configs:
+            - targets: ["user-service.default.svc.cluster.local:5000"]
+      
+        - job_name: "payment_service"
+          scrape_interval: 10s
+          static_configs:
+            - targets: ["payments-service.default.svc.cluster.local:5002"]
+      
+        - job_name: "product_service"
+          scrape_interval: 10s
+          static_configs:
+            - targets: ["product-service.default.svc.cluster.local:5001"]
+      
+        - job_name: "order_service"
+          scrape_interval: 10s
+          static_configs:
+            - targets: ["order-service.default.svc.cluster.local:5003"]
+      
+        - job_name: "notifications_service"
+          scrape_interval: 10s
+          static_configs:
+            - targets: ["notifications-service.default.svc.cluster.local:5004"]
+            
+        - job_name: "cart_service"
+          scrape_interval: 10s
+          static_configs:
+            - targets: ["cart-service.default.svc.cluster.local:5005"]
+     
+        - job_name: 'nginx_exporter'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['nginx-exporter-service.default.svc.cluster.local:9113']
+      
+      rule_files:
+        - "/etc/prometheus/rules.yml"
+      
+      alerting:
+        alertmanagers:
+          - static_configs:
+              - targets:
+                  - "alertmanager.default.svc.cluster.local:9093"
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+data:
+  rules.yml: |
+    groups:
+      - name: high_request_rate_alerts
+        rules:
+          - alert: HighRequestRate
+            expr: rate(http_requests_total[1m]) > 120
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "High rate of HTTP requests"
+              description: "The rate of HTTP requests has exceeded 120 requests per minute over the last 1 minute."
+    
+      - name: nginx_alerts
+        rules:
+          - alert: "Nginx Gateway Down"
+            expr: up{job="nginx"} == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "API Gateway unreachable"
+              description: "Nginx has been down for more than 1 minute"
+
+--- 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - protocol: TCP
+    port: 9090
+    targetPort: 9090
+  type: ClusterIP
+
+  

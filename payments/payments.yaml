@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: payments-service
+  template:  # <-- Moved outside selector
+    metadata:
+      labels:
+        app: payments-service
+    spec:
+      containers:
+        - name: payments-service
+          image: ryankaleligabriel/payments:latest
+          ports:
+            - containerPort: 5002
+          envFrom:
+            - configMapRef:
+                name: payments-config
+            - secretRef:
+                name: payments-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/payments/health
+              port: 5002
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/v1/payments/health
+              port: 5002
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-service
+spec: 
+  selector:
+    app: payments
+  ports:
+  - protocol: TCP
+    port: 5002
+    targetPort: 5002
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: payments-secrets
+type: Opaque
+data:
+  POSTGRES_PASSWORD: "c2VjcmV0"
+  SAFARICOM_CONSUMER_KEY: "TUtlRVBlOEZCMU12WW9EeXl6WjhWeFcwWE95MDZPV0pudVhLSjhCdTdzZm9jT2ZU"
+  SAFARICOM_CONSUMER_SECRET: "cUtuczM1QVpEbnlTUXhWZ3pxUDF1cmtheW5sVmwyYUdqanVjYng2STBPSkZDWm9STVhNWjA2eUdOSjBpdUV6ZA=="
+  BUSINESS_SHORTCODE: "MTc0Mzc5"
+  PASS_KEY: "YmZiMjc5ZjlhYTliZGJjZjE1OGU5N2RkNzFhNDY3Y2QyZTBjODkzMDU5YjEwZjc4ZTZiNzJhZGExZWQyYzkxOQ=="
+  STRIPE_PUBLISHABLE_KEY: "cGtfdGVzdF81MVFsb2xKTHZJT29hNFlPcXB2MmhGd2JQVFB5aUJhdGU3WEZxRDlLbUNmTWNEUURoMkV5OFdON0ZZZnRvVGcySTlZUFlDWDY3T1V0RndiMnFUNGpicVJUaTAwWWxYV1gzT0U="
+  STRIPE_SECRET_KEY: "c2tfdGVzdF81MVFsb2xKTHZJT29hNFlPcXhoa0w4Zm4yNkNZWldia2hZVkNEZTJqU3FzSHBaUFhPd3A4S29ON2JNYXZ0TUFTdDRoMXNNTDVjUHQ2SnltZktSdU1icFAxVjAwWElNbVlHQ1U="  
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payments-config
+data:
+  NODE_ENV: "development"
+  SERVICE_PAYMENT: "PAYMENT"
+  PORT_PAYMENT: "5002"
+  USER_URL: "http://user-service:5000"
+  ORDER_URL: "http://order-service:5003"
+  PAYMENT_URL: "http://payment-service:5002"
+  PRODUCT_URL: "http://product-service:5001"
+  NOTIFICATIONS_URL: "http://notifications-service:5004"
+  CART_URL: "http://cart-service:5005"
+  POSTGRES_DB: "shoply"
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: "shoply"
+  POSTGRES_HOST: "db-service"
